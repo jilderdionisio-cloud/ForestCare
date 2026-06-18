@@ -30,10 +30,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.plant.forestcare.ui.dashboard.DashboardRoute
+import com.plant.forestcare.ui.detail.PlantDetailScreen
 import com.plant.forestcare.ui.form.PlantFormRoute
+import com.plant.forestcare.ui.list.PlantListScreen
 
 @Composable
 fun NavGraph(
@@ -49,22 +53,27 @@ fun NavGraph(
             DashboardRoute(navController = navController)
         }
         composable(Screen.PlantList.route) {
-            PlaceholderScreen(
-                title = "Plantas",
-                message = "Esta sección se implementará próximamente",
-                activeRoute = Screen.PlantList.route,
-                onNavigate = { route -> navController.navigateTopLevel(route) }
+            PlantListScreen(
+                onPlantClick = { plantId ->
+                    navController.navigate(Screen.PlantDetail.createRoute(plantId))
+                },
+                onAddPlantClick = {
+                    navController.navigate(Screen.PlantForm.route)
+                }
             )
         }
         composable(Screen.PlantForm.route) {
             PlantFormRoute(navController = navController)
         }
-        composable(Screen.PlantDetail.route) {
-            PlaceholderScreen(
-                title = "Detalle de planta",
-                message = "Esta sección se implementará próximamente",
-                activeRoute = Screen.PlantList.route,
-                onNavigate = { route -> navController.navigateTopLevel(route) }
+        composable(
+            route = Screen.PlantDetail.route,
+            arguments = listOf(navArgument("plantId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val plantId = backStackEntry.arguments?.getString("plantId").orEmpty()
+            PlantDetailScreen(
+                plantId = plantId,
+                onBackClick = { navController.popBackStack() },
+                onEditClick = { navController.navigate(Screen.PlantForm.route) }
             )
         }
         composable(Screen.Reminders.route) {

@@ -33,11 +33,13 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Spa
 import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material.icons.rounded.Yard
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -74,6 +76,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.plant.forestcare.domain.model.PlantSpecies
 import com.plant.forestcare.navigation.Screen
 import com.plant.forestcare.ui.theme.ForestCareTheme
 
@@ -104,7 +107,10 @@ fun PlantFormRoute(
         onDescriptionChange = viewModel::onDescriptionChange,
         onGrowthLocationChange = viewModel::onGrowthLocationChange,
         onSunlightExposureChange = viewModel::onSunlightExposureChange,
-    onAddTag = { viewModel.onAddTag() },
+        onSearchQueryChange = viewModel::onSearchQueryChange,
+        onSearchPlantsFromApi = viewModel::searchPlantsFromApi,
+        onSelectApiPlant = viewModel::selectPlantFromApi,
+        onAddTag = { viewModel.onAddTag() },
         onRemoveTag = viewModel::onRemoveTag,
         onSavePlant = viewModel::savePlant,
         onMessageShown = viewModel::onMessageShown,
@@ -139,6 +145,9 @@ fun PlantFormScreen(
     onDescriptionChange: (String) -> Unit,
     onGrowthLocationChange: (String) -> Unit,
     onSunlightExposureChange: (String) -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    onSearchPlantsFromApi: () -> Unit,
+    onSelectApiPlant: (PlantSpecies) -> Unit,
     onAddTag: () -> Unit,
     onRemoveTag: (String) -> Unit,
     onSavePlant: () -> Unit,
@@ -185,6 +194,14 @@ fun PlantFormScreen(
                 PlantPhotoUploadBox(onClick = { /* TODO: Abrir cámara o selector de imagen. */ })
             }
             item {
+                PlantApiSearchSection(
+                    uiState = uiState,
+                    onSearchQueryChange = onSearchQueryChange,
+                    onSearchPlantsFromApi = onSearchPlantsFromApi,
+                    onSelectApiPlant = onSelectApiPlant
+                )
+            }
+            item {
                 PlantInformationSection(
                     uiState = uiState,
                     onCustomNameChange = onCustomNameChange,
@@ -208,6 +225,121 @@ fun PlantFormScreen(
                     onClick = onSavePlant
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PlantApiSearchSection(
+    uiState: PlantFormUiState,
+    onSearchQueryChange: (String) -> Unit,
+    onSearchPlantsFromApi: () -> Unit,
+    onSelectApiPlant: (PlantSpecies) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SectionTitle(icon = Icons.Rounded.Search, text = "Buscar en Perenual")
+        FormCard {
+            RoundedInputField(
+                label = "Nombre de planta",
+                value = uiState.searchQuery,
+                placeholder = "Ej. Monstera",
+                onValueChange = onSearchQueryChange
+            )
+            Button(
+                onClick = onSearchPlantsFromApi,
+                enabled = !uiState.isSearching,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(46.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PlantGreen,
+                    contentColor = Color.White
+                )
+            ) {
+                if (uiState.isSearching) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("Buscando...", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                } else {
+                    Icon(
+                        imageVector = Icons.Rounded.Search,
+                        contentDescription = null,
+                        modifier = Modifier.size(17.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("Buscar planta", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            uiState.apiErrorMessage?.let { message ->
+                Text(
+                    text = message,
+                    color = TextMuted,
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp
+                )
+            }
+            uiState.apiResults.forEach { plant ->
+                PlantApiResultItem(
+                    plant = plant,
+                    onClick = { onSelectApiPlant(plant) }
+                )
+            }
+            uiState.photoUri?.let {
+                Text(
+                    text = "Imagen encontrada desde Perenual.",
+                    color = PlantGreenDark,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlantApiResultItem(
+    plant: PlantSpecies,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(PlantGreenSoft)
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = plant.commonName,
+            color = PlantGreenDark,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold
+        )
+        if (plant.scientificName.isNotBlank()) {
+            Text(
+                text = plant.scientificName,
+                color = TextMuted,
+                fontSize = 11.sp
+            )
+        }
+        val careInfo = listOfNotNull(
+            plant.sunlightExposure?.let { "Luz: $it" },
+            plant.watering?.let { "Riego: $it" },
+            plant.imageUrl?.let { "Imagen disponible" }
+        ).joinToString(" · ")
+        if (careInfo.isNotBlank()) {
+            Text(
+                text = careInfo,
+                color = TextPrimary,
+                fontSize = 10.sp,
+                lineHeight = 14.sp
+            )
         }
     }
 }
@@ -723,6 +855,9 @@ private fun PlantFormScreenPreview() {
             onDescriptionChange = {},
             onGrowthLocationChange = {},
             onSunlightExposureChange = {},
+            onSearchQueryChange = {},
+            onSearchPlantsFromApi = {},
+            onSelectApiPlant = {},
             onAddTag = {},
             onRemoveTag = {},
             onSavePlant = {},

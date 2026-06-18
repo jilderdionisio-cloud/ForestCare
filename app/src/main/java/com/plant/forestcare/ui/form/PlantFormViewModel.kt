@@ -2,10 +2,12 @@ package com.plant.forestcare.ui.form
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.plant.forestcare.data.PerenualApiException
 import com.plant.forestcare.data.PlantRepository
 import com.plant.forestcare.data.local.PlantEntity
+import com.plant.forestcare.domain.model.PlantSpecies
+import java.io.IOException
 import java.util.UUID
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,6 +45,65 @@ class PlantFormViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(sunlightExposure = value) }
     }
 
+    fun onSearchQueryChange(value: String) {
+        _uiState.update { it.copy(searchQuery = value, apiErrorMessage = null) }
+    }
+
+    fun searchPlantsFromApi() {
+        val query = _uiState.value.searchQuery.trim()
+        if (query.isBlank()) {
+            _uiState.update { it.copy(apiErrorMessage = "Ingresa un nombre para buscar.") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSearching = true, apiErrorMessage = null, apiResults = emptyList()) }
+            runCatching {
+                repository.searchPlantsFromApi(query)
+            }.onSuccess { plants ->
+                _uiState.update {
+                    it.copy(
+                        apiResults = plants,
+                        isSearching = false,
+                        apiErrorMessage = if (plants.isEmpty()) {
+                            "No se encontraron plantas con ese nombre."
+                        } else {
+                            null
+                        }
+                    )
+                }
+            }.onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        isSearching = false,
+                        apiErrorMessage = if (error is IOException) {
+                            "Sin conexión. Intenta nuevamente."
+                        } else if (error is PerenualApiException) {
+                            error.message
+                        } else {
+                            "No se pudo consultar la información de la planta."
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    fun selectPlantFromApi(plant: PlantSpecies) {
+        _uiState.update {
+            it.copy(
+                commonName = plant.commonName,
+                scientificName = plant.scientificName,
+                description = plant.description,
+                sunlightExposure = plant.sunlightExposure?.takeIf { exposure ->
+                    exposure in listOf("Baja", "Media", "Alta")
+                } ?: it.sunlightExposure,
+                photoUri = plant.imageUrl,
+                apiErrorMessage = null
+            )
+        }
+    }
+
     fun onAddTag(tag: String = "Nueva etiqueta") {
         _uiState.update { state ->
             if (state.tags.contains(tag)) state else state.copy(tags = state.tags + tag)
@@ -77,7 +138,7 @@ class PlantFormViewModel(application: Application) : AndroidViewModel(applicatio
                 location = state.growthLocation,
                 sunlightExposure = state.sunlightExposure,
                 tags = state.tags.joinToString(","),
-                photoUri = null,
+                photoUri = state.photoUri,
                 healthStatus = "Saludable",
                 nextWateringText = "En 2 días",
                 createdAt = now,
