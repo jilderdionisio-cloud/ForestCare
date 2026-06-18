@@ -34,6 +34,8 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Spa
 import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.material.icons.rounded.WbSunny
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -109,7 +111,7 @@ fun DashboardScreen(
     uiState: DashboardUiState,
     onAddPlant: () -> Unit,
     onViewAllPlants: () -> Unit,
-    onPlantClick: (Int) -> Unit,
+    onPlantClick: (String) -> Unit,
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -159,11 +161,17 @@ fun DashboardScreen(
             item {
                 PlantsSectionHeader(onViewAllPlants = onViewAllPlants)
             }
-            items(uiState.plants, key = { it.id }) { plant ->
-                PlantPreviewCard(
-                    plant = plant,
-                    onClick = { onPlantClick(plant.id) }
-                )
+            if (uiState.plants.isEmpty() && !uiState.isLoading) {
+                item {
+                    EmptyPlantsState(onAddPlant = onAddPlant)
+                }
+            } else {
+                items(uiState.plants, key = { it.id }) { plant ->
+                    PlantPreviewCard(
+                        plant = plant,
+                        onClick = { onPlantClick(plant.id) }
+                    )
+                }
             }
         }
     }
@@ -288,12 +296,12 @@ private fun SummaryStatGrid(uiState: DashboardUiState) {
             SummaryStatCard(
                 icon = Icons.Rounded.LocalFlorist,
                 value = uiState.totalPlants.toString(),
-                label = "Total Plantas",
+                label = "Total plantas",
                 modifier = Modifier.weight(1f)
             )
             SummaryStatCard(
                 icon = Icons.Rounded.WaterDrop,
-                value = uiState.nextWatering,
+                value = uiState.nextWateringText,
                 label = "Próximo riego",
                 highlighted = true,
                 modifier = Modifier.weight(1f)
@@ -302,7 +310,7 @@ private fun SummaryStatGrid(uiState: DashboardUiState) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SummaryStatCard(
                 icon = Icons.Rounded.ErrorOutline,
-                value = uiState.pendingTasks.toString(),
+                value = uiState.pendingCareCount.toString(),
                 label = "Pendientes",
                 accentColor = AlertRed,
                 showAlertCurve = true,
@@ -310,10 +318,50 @@ private fun SummaryStatGrid(uiState: DashboardUiState) {
             )
             SummaryStatCard(
                 icon = Icons.Rounded.HealthAndSafety,
-                value = "${uiState.overallHealth}%",
+                value = "${uiState.generalHealthPercentage}%",
                 label = "Salud general",
                 modifier = Modifier.weight(1f)
             )
+        }
+    }
+}
+
+@Composable
+private fun EmptyPlantsState(onAddPlant: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(8.dp, RoundedCornerShape(22.dp), ambientColor = Color.Black.copy(alpha = 0.08f))
+            .clip(RoundedCornerShape(22.dp))
+            .background(Color.White)
+            .padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.Spa,
+            contentDescription = null,
+            tint = PlantGreen,
+            modifier = Modifier.size(34.dp)
+        )
+        Text(
+            text = "Aún no tienes plantas",
+            color = TextPrimary,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = "Agrega tu primera planta para comenzar tu jardín digital",
+            color = TextMuted,
+            fontSize = 12.sp,
+            lineHeight = 16.sp
+        )
+        Button(
+            onClick = onAddPlant,
+            colors = ButtonDefaults.buttonColors(containerColor = PlantGreen),
+            shape = RoundedCornerShape(24.dp)
+        ) {
+            Text("Agregar planta", color = Color.White, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -604,11 +652,11 @@ private fun DashboardBottomBar(
     onNavigate: (String) -> Unit
 ) {
     val items = listOf(
-        BottomNavItem("Home", Screen.Dashboard.route, Icons.Rounded.Home),
-        BottomNavItem("Plants", Screen.PlantList.route, Icons.Rounded.Spa),
+        BottomNavItem("Inicio", Screen.Dashboard.route, Icons.Rounded.Home),
+        BottomNavItem("Plantas", Screen.PlantList.route, Icons.Rounded.Spa),
         BottomNavItem("Dashboard", Screen.Dashboard.route, Icons.Rounded.Dashboard),
-        BottomNavItem("Reminders", Screen.Reminders.route, Icons.Rounded.Notifications),
-        BottomNavItem("Profile", Screen.Profile.route, Icons.Rounded.Person)
+        BottomNavItem("Recordatorios", Screen.Reminders.route, Icons.Rounded.Notifications),
+        BottomNavItem("Perfil", Screen.Profile.route, Icons.Rounded.Person)
     )
 
     Surface(
@@ -667,9 +715,9 @@ private fun DashboardScreenPreview() {
         DashboardScreen(
             uiState = DashboardUiState(
                 plants = listOf(
-                    PlantPreviewUi(1, "INTERIOR", "Monstera Deliciosa", "La gigante verde", "Salud Excelente", "En 2 días", imageType = PlantImageType.Monstera),
-                    PlantPreviewUi(2, "COLGANTE", "Pothos Marble", "Cascada de Mármol", "Salud Estable", "Agua Toca hoy!", urgentWatering = true, imageType = PlantImageType.Pothos),
-                    PlantPreviewUi(3, "RESISTENTE", "Sansevieria", "Lengua de Suegra", "Salud Vigorosa", "Agua En 12 días", imageType = PlantImageType.Sansevieria)
+                    PlantPreviewUi("1", "INTERIOR", "Monstera Deliciosa", "La gigante verde", "Salud Excelente", "En 2 días", imageType = PlantImageType.Monstera),
+                    PlantPreviewUi("2", "COLGANTE", "Pothos Marble", "Cascada de Mármol", "Salud Estable", "Riego hoy", urgentWatering = true, imageType = PlantImageType.Pothos),
+                    PlantPreviewUi("3", "RESISTENTE", "Sansevieria", "Lengua de Suegra", "Salud Vigorosa", "En 12 días", imageType = PlantImageType.Sansevieria)
                 )
             ),
             onAddPlant = {},

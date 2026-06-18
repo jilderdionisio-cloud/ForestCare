@@ -24,8 +24,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.CreditCard
 import androidx.compose.material.icons.rounded.Dashboard
@@ -104,10 +104,19 @@ fun PlantFormRoute(
         onDescriptionChange = viewModel::onDescriptionChange,
         onGrowthLocationChange = viewModel::onGrowthLocationChange,
         onSunlightExposureChange = viewModel::onSunlightExposureChange,
-        onAddTag = { viewModel.onAddTag() },
+    onAddTag = { viewModel.onAddTag() },
         onRemoveTag = viewModel::onRemoveTag,
         onSavePlant = viewModel::savePlant,
         onMessageShown = viewModel::onMessageShown,
+        onSaved = {
+            viewModel.onNavigationHandled()
+            navController.navigate(Screen.Dashboard.route) {
+                popUpTo(Screen.Dashboard.route) {
+                    inclusive = false
+                }
+                launchSingleTop = true
+            }
+        },
         onNavigate = { route ->
             navController.navigate(route) {
                 launchSingleTop = true
@@ -134,6 +143,7 @@ fun PlantFormScreen(
     onRemoveTag: (String) -> Unit,
     onSavePlant: () -> Unit,
     onMessageShown: () -> Unit,
+    onSaved: () -> Unit,
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -144,6 +154,9 @@ fun PlantFormScreen(
         if (message != null) {
             snackbarHostState.showSnackbar(message)
             onMessageShown()
+            if (uiState.savedSuccessfully) {
+                onSaved()
+            }
         }
     }
 
@@ -212,14 +225,14 @@ private fun AddPlantHeader(onBack: () -> Unit) {
             modifier = Modifier.size(38.dp)
         ) {
             Icon(
-                imageVector = Icons.Rounded.ArrowBack,
+                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                 contentDescription = "Volver",
                 tint = PlantGreenDark,
                 modifier = Modifier.size(22.dp)
             )
         }
         Text(
-            text = "Add Planta",
+            text = "Agregar planta",
             color = TextPrimary,
             fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold,
@@ -282,13 +295,13 @@ private fun PlantPhotoUploadBox(onClick: () -> Unit) {
             }
             Spacer(Modifier.height(12.dp))
             Text(
-                text = "Capture your plant",
+                text = "Captura tu planta",
                 color = TextPrimary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium
             )
             Text(
-                text = "Tap to upload or take a photo",
+                text = "Toca para subir o tomar una foto",
                 color = TextMuted,
                 fontSize = 10.sp
             )
@@ -305,30 +318,30 @@ private fun PlantInformationSection(
     onDescriptionChange: (String) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SectionTitle(icon = Icons.Rounded.Spa, text = "Plant Information")
+        SectionTitle(icon = Icons.Rounded.Spa, text = "Información de la planta")
         FormCard {
             RoundedInputField(
-                label = "Custom Name",
+                label = "Nombre personalizado",
                 value = uiState.customName,
-                placeholder = "e.g. Monty the Monstera",
+                placeholder = "Ej. Monstera de Mateo",
                 onValueChange = onCustomNameChange
             )
             RoundedInputField(
-                label = "Common Name",
+                label = "Nombre común",
                 value = uiState.commonName,
                 placeholder = "Monstera Deliciosa",
                 onValueChange = onCommonNameChange
             )
             RoundedInputField(
-                label = "Scientific Name",
+                label = "Nombre científico",
                 value = uiState.scientificName,
                 placeholder = "Monstera deliciosa",
                 onValueChange = onScientificNameChange
             )
             RoundedInputField(
-                label = "Description",
+                label = "Descripción",
                 value = uiState.description,
-                placeholder = "Notes about its growth, history, or special quirks...",
+                placeholder = "Notas sobre su crecimiento, historia o cuidados especiales...",
                 onValueChange = onDescriptionChange,
                 minHeight = 88.dp,
                 singleLine = false
@@ -346,21 +359,21 @@ private fun EnvironmentSection(
     onRemoveTag: (String) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SectionTitle(icon = Icons.Rounded.Yard, text = "Environment")
+        SectionTitle(icon = Icons.Rounded.Yard, text = "Ambiente")
         FormCard {
-            FieldLabel("Growth Location")
+            FieldLabel("Ubicación de crecimiento")
             GrowthLocationSelector(
                 selected = uiState.growthLocation,
                 onSelected = onGrowthLocationChange
             )
             Spacer(Modifier.height(4.dp))
-            FieldLabel("Sunlight Exposure")
+            FieldLabel("Exposición solar")
             SunlightExposureSelector(
                 selected = uiState.sunlightExposure,
                 onSelected = onSunlightExposureChange
             )
             Spacer(Modifier.height(4.dp))
-            FieldLabel("Tags")
+            FieldLabel("Etiquetas")
             TagChipsSection(
                 tags = uiState.tags,
                 onAddTag = onAddTag,
@@ -475,7 +488,7 @@ private fun GrowthLocationSelector(
             .padding(3.dp),
         horizontalArrangement = Arrangement.spacedBy(3.dp)
     ) {
-        listOf("Indoor", "Outdoor").forEach { option ->
+        listOf("Interior", "Exterior").forEach { option ->
             val active = selected == option
             Box(
                 modifier = Modifier
@@ -506,9 +519,9 @@ private fun SunlightExposureSelector(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        SunlightOption("Low", Icons.Rounded.KeyboardArrowDown, selected == "Low", Modifier.weight(1f), onSelected)
-        SunlightOption("Medium", Icons.Rounded.WbSunny, selected == "Medium", Modifier.weight(1f), onSelected)
-        SunlightOption("High", Icons.Rounded.WbSunny, selected == "High", Modifier.weight(1f), onSelected)
+        SunlightOption("Baja", Icons.Rounded.KeyboardArrowDown, selected == "Baja", Modifier.weight(1f), onSelected)
+        SunlightOption("Media", Icons.Rounded.WbSunny, selected == "Media", Modifier.weight(1f), onSelected)
+        SunlightOption("Alta", Icons.Rounded.WbSunny, selected == "Alta", Modifier.weight(1f), onSelected)
     }
 }
 
@@ -571,7 +584,7 @@ private fun TagChipsSection(
             )
         }
         TagChip(
-            text = "+ Add Tag",
+            text = "+ Agregar etiqueta",
             background = FieldBeige,
             contentColor = TextMuted,
             onClick = onAddTag
@@ -629,7 +642,7 @@ private fun SavePlantButton(
         )
         Spacer(Modifier.width(8.dp))
         Text(
-            text = if (isLoading) "Guardando..." else "Guardar Planta",
+            text = if (isLoading) "Guardando..." else "Guardar planta",
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold
         )
@@ -642,11 +655,11 @@ private fun PlantFormBottomBar(
     onNavigate: (String) -> Unit
 ) {
     val items = listOf(
-        BottomNavItem("Home", Screen.Dashboard.route, Icons.Rounded.Home),
-        BottomNavItem("Plants", Screen.PlantList.route, Icons.Rounded.Spa),
+        BottomNavItem("Inicio", Screen.Dashboard.route, Icons.Rounded.Home),
+        BottomNavItem("Plantas", Screen.PlantList.route, Icons.Rounded.Spa),
         BottomNavItem("Dashboard", Screen.Dashboard.route, Icons.Rounded.Dashboard),
-        BottomNavItem("Reminders", Screen.Reminders.route, Icons.Rounded.Notifications),
-        BottomNavItem("Profile", Screen.Profile.route, Icons.Rounded.Person)
+        BottomNavItem("Recordatorios", Screen.Reminders.route, Icons.Rounded.Notifications),
+        BottomNavItem("Perfil", Screen.Profile.route, Icons.Rounded.Person)
     )
 
     Surface(
@@ -661,7 +674,7 @@ private fun PlantFormBottomBar(
         ) {
             items.forEach { item ->
                 NavigationBarItem(
-                    selected = item.route == activeRoute && item.label == "Plants",
+                    selected = item.route == activeRoute && item.label == "Plantas",
                     onClick = { onNavigate(item.route) },
                     icon = {
                         Icon(
@@ -714,6 +727,7 @@ private fun PlantFormScreenPreview() {
             onRemoveTag = {},
             onSavePlant = {},
             onMessageShown = {},
+            onSaved = {},
             onNavigate = {}
         )
     }

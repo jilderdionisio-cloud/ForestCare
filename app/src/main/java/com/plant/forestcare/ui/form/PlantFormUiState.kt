@@ -5,10 +5,11 @@ data class PlantFormUiState(
     val commonName: String = "",
     val scientificName: String = "",
     val description: String = "",
-    val growthLocation: String = "Indoor",
-    val sunlightExposure: String = "Medium",
-    val tags: List<String> = listOf("Pet Friendly", "Air Purifier"),
+    val growthLocation: String = "Interior",
+    val sunlightExposure: String = "Media",
+    val tags: List<String> = listOf("Apta para mascotas", "Purificadora de aire"),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    val savedSuccessfully: Boolean = false
 )
