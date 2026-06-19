@@ -1,5 +1,9 @@
 package com.plant.forestcare.ui.dashboard
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,7 +13,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,8 +41,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -47,7 +48,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,19 +73,19 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.plant.forestcare.navigation.Screen
+import com.plant.forestcare.ui.components.ForestCareBottomBar
 import com.plant.forestcare.ui.theme.ForestCareTheme
 
-private val PlantBackground = Color(0xFFFAFCF7)
-private val PlantGreen = Color(0xFF4CAF50)
-private val PlantGreenDark = Color(0xFF1F5B34)
-private val PlantGreenStrong = Color(0xFF00A651)
-private val TextPrimary = Color(0xFF102116)
-private val TextMuted = Color(0xFF6E7A70)
+private val PlantBackground = Color(0xFFF8FAF7)
+private val PlantGreen = Color(0xFF2E7D32)
+private val PlantGreenDark = Color(0xFF1B5E20)
+private val PlantGreenStrong = Color(0xFF2E7D32)
+private val TextPrimary = Color(0xFF1B1B1B)
+private val TextMuted = Color(0xFF616161)
 private val WarmBeige = Color(0xFFF3EAD9)
-private val AlertRed = Color(0xFFE34D4D)
-private val UrgentOrange = Color(0xFFE86F3A)
+private val AlertRed = Color(0xFFE53935)
+private val UrgentOrange = Color(0xFFF9A825)
 
 @Composable
 fun DashboardRoute(
@@ -91,7 +96,7 @@ fun DashboardRoute(
 
     DashboardScreen(
         uiState = uiState,
-        onAddPlant = { navController.navigate(Screen.PlantForm.route) },
+        onAddPlant = { navController.navigate(Screen.PlantCamera.route) },
         onViewAllPlants = { navController.navigate(Screen.PlantList.route) },
         onPlantClick = { plantId -> navController.navigate(Screen.PlantDetail.createRoute(plantId)) },
         onNavigate = { route ->
@@ -115,64 +120,204 @@ fun DashboardScreen(
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var fabVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        fabVisible = true
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = PlantBackground,
+        containerColor = Color.Transparent,
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddPlant,
-                containerColor = PlantGreenStrong,
-                contentColor = Color.White,
-                shape = CircleShape,
-                modifier = Modifier
-                    .size(54.dp)
-                    .offset(y = 10.dp)
-                    .shadow(10.dp, CircleShape, ambientColor = PlantGreen.copy(alpha = 0.28f))
+            AnimatedVisibility(
+                visible = fabVisible,
+                enter = scaleIn(
+                    animationSpec = tween(durationMillis = 260),
+                    initialScale = 0.82f
+                ) + fadeIn(animationSpec = tween(durationMillis = 220))
             ) {
-                Icon(Icons.Rounded.Add, contentDescription = "Agregar planta")
+                FloatingActionButton(
+                    onClick = onAddPlant,
+                    containerColor = PlantGreenStrong,
+                    contentColor = Color.White,
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .size(54.dp)
+                        .offset(y = 10.dp)
+                        .shadow(10.dp, CircleShape, ambientColor = PlantGreen.copy(alpha = 0.28f))
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = "Agregar nueva planta",
+                        tint = Color.White,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
             }
         },
         bottomBar = {
-            DashboardBottomBar(
+            ForestCareBottomBar(
                 activeRoute = Screen.Dashboard.route,
                 onNavigate = onNavigate
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(start = 16.dp, top = 18.dp, end = 16.dp, bottom = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(0xFFE8F5E9), PlantBackground, Color.White)
+                    )
+                )
         ) {
-            item {
-                DashboardHeader(uiState = uiState)
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentPadding = PaddingValues(start = 16.dp, top = 18.dp, end = 16.dp, bottom = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    DashboardHeader(uiState = uiState)
+                }
+                item {
+                    PremiumCareHero(uiState = uiState)
+                }
+                item {
+                    SummaryStatGrid(uiState = uiState)
+                }
+                item {
+                    CareAlertSummary(uiState = uiState)
+                }
+                if (uiState.intelligentAlerts.isNotEmpty() || uiState.dailyRecommendations.isNotEmpty()) {
+                    item {
+                        IntelligentDashboardCard(uiState = uiState)
+                    }
+                }
+                item {
+                    PlantsSectionHeader(onViewAllPlants = onViewAllPlants)
+                }
+                if (uiState.plants.isEmpty() && !uiState.isLoading) {
+                    item {
+                        EmptyPlantsState()
+                    }
+                } else {
+                    items(uiState.plants, key = { it.id }) { plant ->
+                        PlantPreviewCard(
+                            plant = plant,
+                            onClick = { onPlantClick(plant.id) }
+                        )
+                    }
+                }
             }
-            item {
-                GardenStatusBanner(
-                    title = uiState.statusTitle,
-                    message = uiState.statusMessage
+        }
+    }
+}
+
+@Composable
+private fun PremiumCareHero(uiState: DashboardUiState) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(210.dp)
+            .shadow(14.dp, RoundedCornerShape(32.dp), ambientColor = PlantGreen.copy(alpha = 0.14f))
+            .clip(RoundedCornerShape(32.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(Color(0xFF123B25), Color(0xFF2E7D32), Color(0xFF81C784))
+                )
+            )
+            .padding(20.dp)
+    ) {
+        Canvas(modifier = Modifier.matchParentSize()) {
+            drawCircle(
+                color = Color.White.copy(alpha = 0.12f),
+                radius = size.minDimension * 0.42f,
+                center = Offset(size.width * 0.86f, size.height * 0.24f)
+            )
+            drawCircle(
+                color = Color.White.copy(alpha = 0.08f),
+                radius = size.minDimension * 0.30f,
+                center = Offset(size.width * 0.74f, size.height * 0.80f)
+            )
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(end = 100.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Centro de cuidado",
+                    color = Color.White.copy(alpha = 0.82f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = if (uiState.urgentPlantsCount > 0) "Hay plantas que necesitan atención" else "Tu jardín se ve estable",
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    lineHeight = 29.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = uiState.statusMessage,
+                    color = Color.White.copy(alpha = 0.82f),
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-            item {
-                SummaryStatGrid(uiState = uiState)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                HeroPill("${uiState.totalPlants} plantas")
+                HeroPill("${uiState.pendingCareCount} hoy")
             }
-            item {
-                PlantsSectionHeader(onViewAllPlants = onViewAllPlants)
-            }
-            if (uiState.plants.isEmpty() && !uiState.isLoading) {
-                item {
-                    EmptyPlantsState(onAddPlant = onAddPlant)
-                }
-            } else {
-                items(uiState.plants, key = { it.id }) { plant ->
-                    PlantPreviewCard(
-                        plant = plant,
-                        onClick = { onPlantClick(plant.id) }
-                    )
-                }
-            }
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(110.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.16f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Rounded.Spa, contentDescription = null, tint = Color.White, modifier = Modifier.size(58.dp))
+        }
+    }
+}
+
+@Composable
+private fun HeroPill(text: String) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(Color.White.copy(alpha = 0.18f))
+            .padding(horizontal = 12.dp, vertical = 7.dp)
+    ) {
+        Text(text, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+private fun IntelligentDashboardCard(uiState: DashboardUiState) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(8.dp, RoundedCornerShape(22.dp), ambientColor = Color.Black.copy(alpha = 0.08f))
+            .clip(RoundedCornerShape(22.dp))
+            .background(Color.White)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text("Consejo del día", color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        uiState.intelligentAlerts.ifEmpty {
+            uiState.dailyRecommendations
+        }.take(3).forEach { alert ->
+            Text(alert, color = TextMuted, fontSize = 12.sp, lineHeight = 17.sp)
         }
     }
 }
@@ -309,17 +454,17 @@ private fun SummaryStatGrid(uiState: DashboardUiState) {
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SummaryStatCard(
-                icon = Icons.Rounded.ErrorOutline,
-                value = uiState.pendingCareCount.toString(),
-                label = "Pendientes",
-                accentColor = AlertRed,
-                showAlertCurve = true,
+                icon = Icons.Rounded.HealthAndSafety,
+                value = uiState.healthyPlantsCount.toString(),
+                label = "Saludables",
                 modifier = Modifier.weight(1f)
             )
             SummaryStatCard(
-                icon = Icons.Rounded.HealthAndSafety,
-                value = "${uiState.generalHealthPercentage}%",
-                label = "Salud general",
+                icon = Icons.Rounded.ErrorOutline,
+                value = uiState.urgentPlantsCount.toString(),
+                label = "Cuidados urgentes",
+                accentColor = AlertRed,
+                showAlertCurve = true,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -327,7 +472,48 @@ private fun SummaryStatGrid(uiState: DashboardUiState) {
 }
 
 @Composable
-private fun EmptyPlantsState(onAddPlant: () -> Unit) {
+private fun CareAlertSummary(uiState: DashboardUiState) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        SummaryStatCard(
+            icon = Icons.Rounded.HealthAndSafety,
+            value = uiState.attentionPlantsCount.toString(),
+            label = "Requieren atención",
+            accentColor = AlertRed,
+            modifier = Modifier.weight(1f)
+        )
+        SummaryStatCard(
+            icon = Icons.Rounded.Notifications,
+            value = uiState.nextReviewText,
+            label = "Próxima revisión",
+            modifier = Modifier.weight(1f)
+        )
+    }
+    if (uiState.diseaseAlertsCount > 0) {
+        Surface(
+            color = Color(0xFFFFF3ED),
+            shape = RoundedCornerShape(22.dp),
+            shadowElevation = 6.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(Icons.Rounded.ErrorOutline, contentDescription = null, tint = UrgentOrange, modifier = Modifier.size(20.dp))
+                Column {
+                    Text("Alertas importantes", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("${uiState.diseaseAlertsCount} planta(s) necesitan revisión", color = TextMuted, fontSize = 12.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyPlantsState() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -356,13 +542,6 @@ private fun EmptyPlantsState(onAddPlant: () -> Unit) {
             fontSize = 12.sp,
             lineHeight = 16.sp
         )
-        Button(
-            onClick = onAddPlant,
-            colors = ButtonDefaults.buttonColors(containerColor = PlantGreen),
-            shape = RoundedCornerShape(24.dp)
-        ) {
-            Text("Agregar planta", color = Color.White, fontWeight = FontWeight.Bold)
-        }
     }
 }
 
@@ -652,7 +831,7 @@ private fun DashboardBottomBar(
     onNavigate: (String) -> Unit
 ) {
     val items = listOf(
-        BottomNavItem("Inicio", Screen.Dashboard.route, Icons.Rounded.Home),
+        BottomNavItem("Inicio", Screen.Home.route, Icons.Rounded.Home),
         BottomNavItem("Plantas", Screen.PlantList.route, Icons.Rounded.Spa),
         BottomNavItem("Dashboard", Screen.Dashboard.route, Icons.Rounded.Dashboard),
         BottomNavItem("Recordatorios", Screen.Reminders.route, Icons.Rounded.Notifications),

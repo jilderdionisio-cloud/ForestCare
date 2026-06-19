@@ -1,116 +1,148 @@
 package com.plant.forestcare.data
 
 import android.content.Context
-import android.util.Log
-import com.plant.forestcare.core.constants.AppConstants
 import com.plant.forestcare.data.local.AppDatabase
 import com.plant.forestcare.data.local.PlantDao
 import com.plant.forestcare.data.local.PlantEntity
-import com.plant.forestcare.data.remote.RetrofitInstance
-import com.plant.forestcare.data.remote.api.PlantApiService
-import com.plant.forestcare.data.remote.dto.PlantSpeciesDto
-import com.plant.forestcare.domain.model.PlantSpecies
+import com.plant.forestcare.data.local.ReminderDao
+import com.plant.forestcare.data.local.ReminderEntity
+import com.plant.forestcare.data.remote.PlantRemoteDataSource
+import com.plant.forestcare.domain.model.DiseaseDiagnosisResult
+import com.plant.forestcare.domain.model.PlantApisConnectionTestResult
+import com.plant.forestcare.domain.model.PlantIdentificationResult
+import java.util.UUID
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 
 class PlantRepository private constructor(
     private val plantDao: PlantDao,
-    private val plantApiService: PlantApiService = RetrofitInstance.plantApiService
+    private val reminderDao: ReminderDao,
+    private val remoteDataSource: PlantRemoteDataSource = PlantRemoteDataSource()
 ) {
-    fun getAllPlants(): Flow<List<PlantEntity>> = plantDao.getAllPlants()
+    fun observePlants(): Flow<List<PlantEntity>> = plantDao.getAllPlantsFlow()
+
+    fun getAllPlants(): Flow<List<PlantEntity>> = observePlants()
 
     fun getPlantById(id: String): Flow<PlantEntity?> = plantDao.getPlantById(id)
 
+    fun getPendingReminders(): Flow<List<ReminderEntity>> = reminderDao.getPendingReminders()
+
     suspend fun savePlant(plant: PlantEntity) {
-        plantDao.insertPlant(plant)
+        withContext(Dispatchers.IO) {
+            plantDao.insertPlant(plant)
+            createCareReminders(plant)
+        }
     }
 
     suspend fun updatePlant(plant: PlantEntity) {
-        plantDao.updatePlant(plant)
+        withContext(Dispatchers.IO) {
+            plantDao.updatePlant(plant)
+            reminderDao.deleteRemindersForPlant(plant.id)
+            createCareReminders(plant)
+        }
     }
 
     suspend fun deletePlant(plant: PlantEntity) {
-        plantDao.deletePlant(plant)
+        withContext(Dispatchers.IO) {
+            reminderDao.deleteRemindersForPlant(plant.id)
+            plantDao.deletePlant(plant)
+        }
     }
 
-    suspend fun searchPlantsFromApi(query: String, page: Int = 1): List<PlantSpecies> {
-        val normalizedQuery = query.trim()
-        if (normalizedQuery.isBlank()) return emptyList()
+    suspend fun markWateringDone(plant: PlantEntity) {
+        withContext(Dispatchers.IO) {
+            val now = System.currentTimeMillis()
+            val updated = plant.copy(
+                nextWateringAt = now + plant.recommendedWateringDays.daysInMillis(),
+                updatedAt = now
+            )
+            plantDao.updatePlant(updated)
+            reminderDao.markRemindersCompleted(plant.id, REMINDER_WATERING)
+            createCareReminders(updated)
+        }
+    }
 
-        val response = plantApiService.searchPlants(
-            apiKey = AppConstants.PERENUAL_API_KEY,
-            query = normalizedQuery,
-            page = page
-        )
+    suspend fun completeReminder(reminderId: String) {
+        withContext(Dispatchers.IO) { reminderDao.markReminderCompleted(reminderId) }
+    }
 
-        if (!response.isSuccessful) {
-            val errorBody = response.errorBody()?.string().orEmpty()
-            Log.e(TAG, "Error HTTP Perenual: ${response.code()}")
-            Log.e(TAG, "Cuerpo de error Perenual: $errorBody")
-            throw PerenualApiException(
-                code = response.code(),
-                errorBody = errorBody,
-                message = "Error HTTP ${response.code()} al consultar Perenual."
+    suspend fun postponeReminder(reminderId: String, days: Int = 1) {
+        withContext(Dispatchers.IO) {
+            reminderDao.rescheduleReminder(
+                id = reminderId,
+                scheduledAt = System.currentTimeMillis() + days.daysInMillis()
             )
         }
-
-        Log.d("PerenualAPI", response.body().toString())
-        return response.body()?.data.orEmpty().mapNotNull { it.toDomain() }
     }
 
-    private fun PlantSpeciesDto.toDomain(): PlantSpecies? {
-        val resolvedCommonName = commonName?.takeIf { it.isNotBlank() } ?: return null
-        val resolvedScientificName = scientificName
-            ?.firstOrNull { it.isNotBlank() }
-            .orEmpty()
-        val sunlightText = sunlight
-            ?.filter { it.isNotBlank() }
-            ?.joinToString(", ")
+    suspend fun skipReminder(reminderId: String) {
+        withContext(Dispatchers.IO) { reminderDao.markReminderCompleted(reminderId) }
+    }
 
-        return PlantSpecies(
-            id = id ?: resolvedCommonName.hashCode(),
-            commonName = resolvedCommonName,
-            scientificName = resolvedScientificName,
-            imageUrl = defaultImage?.regularUrl
-                ?: defaultImage?.mediumUrl
-                ?: defaultImage?.smallUrl
-                ?: defaultImage?.originalUrl
-                ?: defaultImage?.thumbnail,
-            sunlightExposure = sunlightText?.toSpanishSunlightExposure(),
-            watering = watering?.takeIf { it.isNotBlank() },
-            description = buildDescription(resolvedCommonName, resolvedScientificName, watering, sunlightText)
+    suspend fun identifyPlantFromImage(base64Image: String): Result<PlantIdentificationResult> {
+        return withContext(Dispatchers.IO) {
+            runCatching { remoteDataSource.identifyPlant(base64Image) }
+        }
+    }
+
+    suspend fun diagnosePlantDisease(
+        base64Image: String,
+        identification: PlantIdentificationResult? = null
+    ): Result<DiseaseDiagnosisResult> {
+        return withContext(Dispatchers.IO) {
+            runCatching { remoteDataSource.diagnoseDisease(base64Image, identification) }
+        }
+    }
+
+    suspend fun testPlantApisConnection(base64Image: String): Result<PlantApisConnectionTestResult> {
+        return withContext(Dispatchers.IO) {
+            runCatching { remoteDataSource.testPlantApisConnection(base64Image) }
+        }
+    }
+
+    private suspend fun createCareReminders(plant: PlantEntity) {
+        val now = System.currentTimeMillis()
+        val reminders = mutableListOf(
+            ReminderEntity(
+                    id = UUID.randomUUID().toString(),
+                    plantId = plant.id,
+                    type = REMINDER_WATERING,
+                    title = "Regar ${plant.customName.ifBlank { plant.commonName }}",
+                    scheduledAt = plant.nextWateringAt,
+                    createdAt = now
+            )
         )
+        if (plant.healthStatus != "saludable") {
+            reminders +=
+                ReminderEntity(
+                    id = UUID.randomUUID().toString(),
+                    plantId = plant.id,
+                    type = REMINDER_WEEKLY_REVIEW,
+                    title = "Revisión semanal de ${plant.customName.ifBlank { plant.commonName }}",
+                    scheduledAt = now + 7.daysInMillis(),
+                    createdAt = now
+                )
+        }
+        if (plant.healthStatus == "cuidado_urgente" && !plant.diseaseName.isNullOrBlank()) {
+            reminders += ReminderEntity(
+                id = UUID.randomUUID().toString(),
+                plantId = plant.id,
+                type = REMINDER_DISEASE_REVIEW,
+                title = "Revisar enfermedad de ${plant.customName.ifBlank { plant.commonName }}",
+                scheduledAt = plant.nextReviewAt,
+                createdAt = now
+            )
+        }
+        reminderDao.insertReminders(reminders)
     }
 
-    private fun String.toSpanishSunlightExposure(): String {
-        val normalized = lowercase()
-        return when {
-            listOf("shade", "part shade", "filtered shade").any { normalized.contains(it) } -> "Baja"
-            listOf("part sun", "medium", "indirect").any { normalized.contains(it) } -> "Media"
-            listOf("full sun", "sun").any { normalized.contains(it) } -> "Alta"
-            else -> this
-        }
-    }
-
-    private fun buildDescription(
-        commonName: String,
-        scientificName: String,
-        watering: String?,
-        sunlight: String?
-    ): String {
-        val details = buildList {
-            if (scientificName.isNotBlank()) add("Nombre científico: $scientificName")
-            watering?.takeIf { it.isNotBlank() }?.let { add("Riego: $it") }
-            sunlight?.takeIf { it.isNotBlank() }?.let { add("Luz: $it") }
-        }
-        return if (details.isEmpty()) {
-            "Información encontrada en Perenual para $commonName."
-        } else {
-            details.joinToString(". ")
-        }
-    }
+    private fun Int.daysInMillis(): Long = this * 24L * 60L * 60L * 1000L
 
     companion object {
-        private const val TAG = "PerenualApi"
+        private const val REMINDER_WATERING = "watering"
+        private const val REMINDER_WEEKLY_REVIEW = "weekly_review"
+        private const val REMINDER_DISEASE_REVIEW = "revision_enfermedad"
 
         @Volatile
         private var INSTANCE: PlantRepository? = null
@@ -118,16 +150,10 @@ class PlantRepository private constructor(
         fun getInstance(context: Context): PlantRepository {
             return INSTANCE ?: synchronized(this) {
                 val database = AppDatabase.getDatabase(context)
-                val instance = PlantRepository(database.plantDao())
+                val instance = PlantRepository(database.plantDao(), database.reminderDao())
                 INSTANCE = instance
                 instance
             }
         }
     }
 }
-
-class PerenualApiException(
-    val code: Int,
-    val errorBody: String,
-    override val message: String
-) : Exception(message)

@@ -9,8 +9,15 @@ data class DashboardUiState(
     val isLoading: Boolean = true,
     val totalPlants: Int = 0,
     val pendingCareCount: Int = 0,
+    val healthyPlantsCount: Int = 0,
+    val attentionPlantsCount: Int = 0,
+    val urgentPlantsCount: Int = 0,
+    val diseaseAlertsCount: Int = 0,
     val generalHealthPercentage: Int = 0,
     val nextWateringText: String = "Sin riegos",
+    val nextReviewText: String = "Sin revisiones",
+    val intelligentAlerts: List<String> = emptyList(),
+    val dailyRecommendations: List<String> = emptyList(),
     val errorMessage: String? = null,
     val plants: List<PlantPreviewUi> = emptyList()
 )

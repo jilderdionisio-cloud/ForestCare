@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface PlantDao {
     @Query("SELECT * FROM plants ORDER BY createdAt DESC")
+    fun getAllPlantsFlow(): Flow<List<PlantEntity>>
+
+    @Query("SELECT * FROM plants ORDER BY createdAt DESC")
     fun getAllPlants(): Flow<List<PlantEntity>>
 
     @Query("SELECT * FROM plants WHERE id = :id LIMIT 1")
