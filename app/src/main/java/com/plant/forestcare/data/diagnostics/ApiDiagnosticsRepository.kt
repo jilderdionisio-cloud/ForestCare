@@ -75,7 +75,9 @@ class ApiDiagnosticsRepository(
             elapsedMs = connection.elapsedMs,
             responsePreview = connection.responseText.preview(),
             error = if (connection.success) null else connection.responseText,
-            missingFields = if (connection.success) emptyList() else listOf("response")
+            missingFields = if (connection.success) emptyList() else listOf("response"),
+            modelUsed = ApiConfig.GEMINI_MODEL,
+            fallbackUsed = !connection.success
         )
     }
 
@@ -128,7 +130,8 @@ class ApiDiagnosticsRepository(
                 "commonName".takeIf { commonName.isNullOrBlank() },
                 "scientificName".takeIf { scientificName.isNullOrBlank() },
                 "confidence".takeIf { suggestion?.probability == null }
-            )
+            ),
+            fallbackUsed = false
         )
     }
 
@@ -149,7 +152,8 @@ class ApiDiagnosticsRepository(
             elapsedMs = elapsedMs,
             responsePreview = bodyText.preview(),
             error = error?.message ?: errorBody.takeIf { it.isNotBlank() },
-            missingFields = missingFields
+            missingFields = missingFields,
+            fallbackUsed = false
         )
     }
 
@@ -193,9 +197,9 @@ class ApiDiagnosticsRepository(
     )
 
     private companion object {
-        private const val PLANT_TAG = "[API_CHECK][PLANT_ID]"
-        private const val DISEASE_TAG = "[API_CHECK][DISEASE]"
-        private const val GEMINI_TAG = "[API_CHECK][GEMINI]"
+        private const val PLANT_TAG = "[API_AUDIT][PLANT_ID]"
+        private const val DISEASE_TAG = "[API_AUDIT][DISEASE]"
+        private const val GEMINI_TAG = "[API_AUDIT][GEMINI]"
     }
 }
 
@@ -213,7 +217,9 @@ data class ApiDiagnosticResult(
     val elapsedMs: Long,
     val responsePreview: String,
     val error: String?,
-    val missingFields: List<String> = emptyList()
+    val missingFields: List<String> = emptyList(),
+    val modelUsed: String? = null,
+    val fallbackUsed: Boolean = false
 )
 
 enum class ApiDiagnosticStatus(val label: String) {

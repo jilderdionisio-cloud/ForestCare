@@ -127,6 +127,12 @@ private fun DiagnosticCard(
             }
             Text("HTTP: ${result?.httpCode ?: "-"}")
             Text("Tiempo: ${result?.elapsedMs ?: 0} ms")
+            result?.modelUsed?.let { model ->
+                Text("Modelo: $model")
+            }
+            if (result?.fallbackUsed == true) {
+                Text("Fallback: usado", color = Color(0xFF8A5A00), fontWeight = FontWeight.SemiBold)
+            }
             Text(
                 text = "URL: ${result?.url ?: "-"}",
                 maxLines = 2,

@@ -12,6 +12,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 object RetrofitInstance {
     private const val TAG = "PlantApi"
@@ -19,6 +20,7 @@ object RetrofitInstance {
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         redactHeader("Api-Key")
         redactHeader("X-goog-api-key")
+        redactHeader("Authorization")
         level = HttpLoggingInterceptor.Level.BASIC
     }
 
@@ -40,6 +42,9 @@ object RetrofitInstance {
     }
 
     private val okHttpClient = OkHttpClient.Builder()
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(45, TimeUnit.SECONDS)
+        .writeTimeout(45, TimeUnit.SECONDS)
         .addInterceptor(networkDebugInterceptor)
         .addInterceptor(loggingInterceptor)
         .build()
