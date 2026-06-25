@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "314076479787",
+    "project_id": "forestcare-93d6d",
+    "storage_bucket": "forestcare-93d6d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:314076479787:android:336e77a466f251ef5cc56e",
+        "android_client_info": {
+          "package_name": "com.plant.forestcare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDbX4oOoCS-EmNYZOLktu-L5GBtidNQAn4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
