@@ -7,8 +7,11 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.plant.forestcare.ui.auth.LoginRoute
+import com.plant.forestcare.ui.auth.LoginViewModel
 import com.plant.forestcare.ui.auth.RegisterRoute
+import com.plant.forestcare.ui.auth.RegisterViewModel
 import com.plant.forestcare.ui.dashboard.DashboardRoute
 import com.plant.forestcare.ui.diagnostics.ApiDiagnosticsRoute
 import com.plant.forestcare.ui.detail.PlantDetailRoute
@@ -30,7 +33,9 @@ fun NavGraph(
         modifier = modifier
     ) {
         composable(Screen.Login.route) {
+            val loginViewModel: LoginViewModel = hiltViewModel()
             LoginRoute(
+                viewModel = loginViewModel,
                 onLoginSuccess = {
                     navController.navigate(Screen.Dashboard.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
@@ -42,7 +47,9 @@ fun NavGraph(
             )
         }
         composable(Screen.Register.route) {
+            val registerViewModel: RegisterViewModel = hiltViewModel()
             RegisterRoute(
+                viewModel = registerViewModel,
                 onRegisterSuccess = {
                     navController.navigate(Screen.Dashboard.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
