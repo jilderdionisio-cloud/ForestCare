@@ -1,3 +1,51 @@
 package com.plant.forestcare.data.local
 
-// TODO: Entidad de base de datos
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "plants")
+data class PlantEntity(
+    @PrimaryKey val id: String,
+    val userId: String? = null,
+    val customName: String = "",
+    val commonName: String = "",
+    val scientificName: String = "",
+    val description: String = "",
+    val photoUri: String? = null,
+    val photoUrl: String? = null,
+    val locationType: String = "Interior",
+    val lightExposure: String = "Luz indirecta",
+    val leafStatus: String = "Verdes y firmes",
+    val soilHumidity: String = "No sabe",
+    val currentWateringFrequency: String = "No recuerdo",
+    val identifiedByApi: Boolean = false,
+    val identificationConfidence: Double? = null,
+    val isHealthyByDiseaseApi: Boolean? = null,
+    val diseaseName: String? = null,
+    val diseaseProbability: Double? = null,
+    val diseaseDescription: String? = null,
+    val diseaseTreatmentRecommendation: String? = null,
+    val recommendedWateringDays: Int = 7,
+    val lightRecommendation: String = "Mantén luz indirecta brillante.",
+    val fertilizationRecommendation: String = "Fertiliza cada 4 a 6 semanas en temporada de crecimiento.",
+    val pruningRecommendation: String = "Retira hojas secas o dañadas cuando aparezcan.",
+    val diagnosis: String = "Planta estable",
+    val treatmentRecommendation: String = "Mantener rutina actual.",
+    val geminiHealthStatus: String? = null,
+    val geminiDiagnosis: String? = null,
+    val geminiPossibleCauses: String? = null,
+    val geminiWateringRecommendation: String? = null,
+    val geminiLightRecommendation: String? = null,
+    val geminiFertilizationRecommendation: String? = null,
+    val geminiPruningRecommendation: String? = null,
+    val geminiTreatmentRecommendation: String? = null,
+    val geminiWeeklyCarePlan: String? = null,
+    val geminiRiskLevel: String? = null,
+    val geminiAnalyzedAt: Long? = null,
+    val tags: String = "",
+    val healthStatus: String = "saludable",
+    val nextWateringAt: Long = 0L,
+    val nextReviewAt: Long = 0L,
+    val createdAt: Long = 0L,
+    val updatedAt: Long = 0L
+)
