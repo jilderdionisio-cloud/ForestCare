@@ -7,6 +7,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.plant.forestcare.ui.auth.LoginRoute
+import com.plant.forestcare.ui.auth.RegisterRoute
 import com.plant.forestcare.ui.dashboard.DashboardRoute
 import com.plant.forestcare.ui.diagnostics.ApiDiagnosticsRoute
 import com.plant.forestcare.ui.detail.PlantDetailRoute
@@ -24,9 +26,33 @@ fun NavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Dashboard.route,
+        startDestination = Screen.Login.route,
         modifier = modifier
     ) {
+        composable(Screen.Login.route) {
+            LoginRoute(
+                onLoginSuccess = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onRegisterClick = {
+                    navController.navigate(Screen.Register.route)
+                }
+            )
+        }
+        composable(Screen.Register.route) {
+            RegisterRoute(
+                onRegisterSuccess = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
         composable(Screen.Home.route) {
             HomeRoute(navController = navController)
         }
