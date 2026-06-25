@@ -7,6 +7,8 @@ import com.plant.forestcare.data.local.PlantEntity
 import com.plant.forestcare.data.local.ReminderDao
 import com.plant.forestcare.data.local.ReminderEntity
 import com.plant.forestcare.data.remote.PlantRemoteDataSource
+import com.plant.forestcare.data.local.storage.ImageStorage
+import com.plant.forestcare.data.local.storage.ImageStorageManager
 import com.plant.forestcare.domain.model.DiseaseDiagnosisResult
 import com.plant.forestcare.domain.model.PlantApisConnectionTestResult
 import com.plant.forestcare.domain.model.PlantIdentificationResult
@@ -18,6 +20,7 @@ import kotlinx.coroutines.withContext
 class PlantRepository private constructor(
     private val plantDao: PlantDao,
     private val reminderDao: ReminderDao,
+    private val imageStorage: ImageStorage,
     private val remoteDataSource: PlantRemoteDataSource = PlantRemoteDataSource()
 ) {
     fun observePlants(): Flow<List<PlantEntity>> = plantDao.getAllPlantsFlow()
@@ -35,6 +38,18 @@ class PlantRepository private constructor(
         }
     }
 
+    suspend fun createPlantWithImage(plant: PlantEntity, tempUri: android.net.Uri) {
+        withContext(Dispatchers.IO) {
+            val permanentPath = imageStorage.saveImage(tempUri)
+            val plantToSave = plant.copy(
+                photoUrl = permanentPath, // Usamos photoUrl tal como exige el expediente técnico
+                updatedAt = System.currentTimeMillis()
+            )
+            plantDao.insertPlant(plantToSave)
+            createCareReminders(plantToSave)
+        }
+    }
+
     suspend fun updatePlant(plant: PlantEntity) {
         withContext(Dispatchers.IO) {
             plantDao.updatePlant(plant)
@@ -45,6 +60,14 @@ class PlantRepository private constructor(
 
     suspend fun deletePlant(plant: PlantEntity) {
         withContext(Dispatchers.IO) {
+            reminderDao.deleteRemindersForPlant(plant.id)
+            plantDao.deletePlant(plant)
+        }
+    }
+
+    suspend fun deletePlantComplete(plant: PlantEntity) {
+        withContext(Dispatchers.IO) {
+            plant.photoUrl?.let { imageStorage.deleteImage(it) }
             reminderDao.deleteRemindersForPlant(plant.id)
             plantDao.deletePlant(plant)
         }
@@ -150,7 +173,11 @@ class PlantRepository private constructor(
         fun getInstance(context: Context): PlantRepository {
             return INSTANCE ?: synchronized(this) {
                 val database = AppDatabase.getDatabase(context)
-                val instance = PlantRepository(database.plantDao(), database.reminderDao())
+                val instance = PlantRepository(
+                    plantDao = database.plantDao(),
+                    reminderDao = database.reminderDao(),
+                    imageStorage = ImageStorageManager(context)
+                )
                 INSTANCE = instance
                 instance
             }
