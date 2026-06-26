@@ -46,6 +46,10 @@ class MainActivity : ComponentActivity() {
                     onAuthFinished = {
                         preferences.edit().putBoolean(KEY_AUTH_COMPLETED, true).apply()
                         authCompleted = true
+                    },
+                    onLogout = {
+                        preferences.edit().putBoolean(KEY_AUTH_COMPLETED, false).apply()
+                        authCompleted = false
                     }
                 )
             }

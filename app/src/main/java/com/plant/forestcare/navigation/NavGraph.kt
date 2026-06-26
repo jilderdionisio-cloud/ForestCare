@@ -18,6 +18,7 @@ import com.plant.forestcare.ui.home.HomeRoute
 import com.plant.forestcare.ui.list.PlantListRoute
 import com.plant.forestcare.ui.onboarding.OnboardingRoute
 import com.plant.forestcare.ui.onboarding.SplashRoute
+import com.plant.forestcare.ui.profile.ProfileHelpRoute
 import com.plant.forestcare.ui.profile.ProfileRoute
 import com.plant.forestcare.ui.reminders.RemindersRoute
 
@@ -27,7 +28,8 @@ fun NavGraph(
     modifier: Modifier = Modifier,
     startDestination: String = Screen.Dashboard.route,
     onOnboardingFinished: () -> Unit = {},
-    onAuthFinished: () -> Unit = {}
+    onAuthFinished: () -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     NavHost(
         navController = navController,
@@ -142,7 +144,22 @@ fun NavGraph(
             RemindersRoute(navController = navController)
         }
         composable(Screen.Profile.route) {
-            ProfileRoute(navController = navController)
+            ProfileRoute(
+                navController = navController,
+                onLogout = {
+                    onLogout()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+        composable(Screen.ProfileHelp.route) {
+            ProfileHelpRoute(
+                onBackClick = { navController.popBackStack() },
+                onNavigate = { route -> navController.navigateTopLevel(route) }
+            )
         }
         composable(Screen.ApiDiagnostics.route) {
             ApiDiagnosticsRoute()

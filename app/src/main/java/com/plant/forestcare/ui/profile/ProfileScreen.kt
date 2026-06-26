@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
@@ -28,13 +29,22 @@ import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Spa
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,12 +80,15 @@ private val LogoutRed = Color(0xFFE44C4C)
 @Composable
 fun ProfileRoute(
     navController: NavController,
+    onLogout: () -> Unit,
     viewModel: ProfileViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     ProfileScreen(
         uiState = uiState,
+        onUpdateProfile = viewModel::updateProfile,
+        onLogout = onLogout,
         onNavigate = { route ->
             navController.navigate(route) {
                 launchSingleTop = true
@@ -89,10 +102,53 @@ fun ProfileRoute(
 }
 
 @Composable
-private fun ProfileScreen(
-    uiState: ProfileUiState,
+fun ProfileHelpRoute(
+    onBackClick: () -> Unit,
     onNavigate: (String) -> Unit
 ) {
+    ProfileHelpScreen(
+        onBackClick = onBackClick,
+        onNavigate = onNavigate
+    )
+}
+
+@Composable
+private fun ProfileScreen(
+    uiState: ProfileUiState,
+    onUpdateProfile: (String, String) -> Unit,
+    onLogout: () -> Unit,
+    onNavigate: (String) -> Unit
+) {
+    var showEditProfile by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
+    var showLogoutConfirmation by remember { mutableStateOf(false) }
+
+    if (showEditProfile) {
+        EditProfileDialog(
+            initialName = uiState.userName,
+            initialEmail = uiState.email,
+            onDismiss = { showEditProfile = false },
+            onSave = { name, email ->
+                onUpdateProfile(name, email)
+                showEditProfile = false
+            }
+        )
+    }
+
+    if (showSettings) {
+        SettingsDialog(onDismiss = { showSettings = false })
+    }
+
+    if (showLogoutConfirmation) {
+        LogoutConfirmationDialog(
+            onDismiss = { showLogoutConfirmation = false },
+            onConfirm = {
+                showLogoutConfirmation = false
+                onLogout()
+            }
+        )
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
         bottomBar = {
@@ -168,7 +224,13 @@ private fun ProfileScreen(
                         AnimatedEntry(delayMillis = 220) {
                             Column {
                                 Spacer(Modifier.height(32.dp))
-                                ProfileOptionsCard()
+                                ProfileOptionsCard(
+                                    onEditProfile = { showEditProfile = true },
+                                    onSettings = { showSettings = true },
+                                    onNotifications = { onNavigate(Screen.Reminders.route) },
+                                    onHelp = { onNavigate(Screen.ProfileHelp.route) },
+                                    onLogout = { showLogoutConfirmation = true }
+                                )
                             }
                         }
                     }
@@ -303,7 +365,13 @@ private fun MetricCard(
 }
 
 @Composable
-private fun ProfileOptionsCard() {
+private fun ProfileOptionsCard(
+    onEditProfile: () -> Unit,
+    onSettings: () -> Unit,
+    onNotifications: () -> Unit,
+    onHelp: () -> Unit,
+    onLogout: () -> Unit
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -317,14 +385,16 @@ private fun ProfileOptionsCard() {
                 icon = Icons.Rounded.Edit,
                 label = "Editar perfil",
                 iconBackground = ProfileGreenSoft,
-                iconTint = ProfileGreen
+                iconTint = ProfileGreen,
+                onClick = onEditProfile
             )
             MenuDivider()
             ProfileMenuRow(
                 icon = Icons.Rounded.Settings,
                 label = "Configuración",
                 iconBackground = Color(0xFFE7F8E1),
-                iconTint = ProfileGreen
+                iconTint = ProfileGreen,
+                onClick = onSettings
             )
             MenuDivider()
             ProfileMenuRow(
@@ -332,14 +402,16 @@ private fun ProfileOptionsCard() {
                 label = "Notificaciones",
                 iconBackground = Color(0xFFE7F8E1),
                 iconTint = ProfileGreen,
-                showNotificationDot = true
+                showNotificationDot = true,
+                onClick = onNotifications
             )
             MenuDivider()
             ProfileMenuRow(
                 icon = Icons.AutoMirrored.Rounded.HelpOutline,
                 label = "Ayuda",
                 iconBackground = Color(0xFFF5F5F0),
-                iconTint = Color(0xFF93A091)
+                iconTint = Color(0xFF93A091),
+                onClick = onHelp
             )
             MenuDivider()
             ProfileMenuRow(
@@ -348,7 +420,8 @@ private fun ProfileOptionsCard() {
                 iconBackground = Color(0xFFFFE6E6),
                 iconTint = LogoutRed,
                 labelColor = LogoutRed,
-                showChevron = false
+                showChevron = false,
+                onClick = onLogout
             )
         }
     }
@@ -362,13 +435,14 @@ private fun ProfileMenuRow(
     iconTint: Color,
     labelColor: Color = ProfileText,
     showChevron: Boolean = true,
-    showNotificationDot: Boolean = false
+    showNotificationDot: Boolean = false,
+    onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
-            .clickable { },
+            .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Surface(
@@ -441,12 +515,259 @@ private fun LeafWatermark() {
     }
 }
 
+@Composable
+private fun EditProfileDialog(
+    initialName: String,
+    initialEmail: String,
+    onDismiss: () -> Unit,
+    onSave: (String, String) -> Unit
+) {
+    var name by remember(initialName) { mutableStateOf(initialName) }
+    var email by remember(initialEmail) { mutableStateOf(initialEmail) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        shape = RoundedCornerShape(28.dp),
+        title = {
+            Text("Editar perfil", color = ProfileText, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(
+                    "Actualiza los datos visibles de tu perfil.",
+                    color = ProfileMuted,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp
+                )
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nombre") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Correo") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(name, email) },
+                colors = ButtonDefaults.buttonColors(containerColor = ProfileGreen),
+                shape = RoundedCornerShape(18.dp)
+            ) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar", color = ProfileMuted)
+            }
+        }
+    )
+}
+
+@Composable
+private fun SettingsDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        shape = RoundedCornerShape(28.dp),
+        title = {
+            Text("Configuración", color = ProfileText, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SettingsOption("Recordatorios suaves", "Recibe avisos claros sin saturarte.")
+                SettingsOption("Modo jardín compacto", "Muestra tus plantas con tarjetas más pequeñas.")
+                SettingsOption("Consejos diarios", "Activa recomendaciones breves de cuidado.")
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = ProfileGreen),
+                shape = RoundedCornerShape(18.dp)
+            ) {
+                Text("Entendido")
+            }
+        }
+    )
+}
+
+@Composable
+private fun SettingsOption(title: String, description: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(CircleShape)
+                .background(ProfileGreenSoft),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Rounded.Settings, contentDescription = null, tint = ProfileGreen, modifier = Modifier.size(17.dp))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, color = ProfileText, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            Text(description, color = ProfileMuted, fontSize = 12.sp, lineHeight = 16.sp)
+        }
+    }
+}
+
+@Composable
+private fun LogoutConfirmationDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        shape = RoundedCornerShape(28.dp),
+        icon = {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFFFE6E6)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = null, tint = LogoutRed)
+            }
+        },
+        title = {
+            Text("¿Cerrar sesión?", color = ProfileText, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+        },
+        text = {
+            Text(
+                "Tendrás que iniciar sesión nuevamente para volver a tu jardín.",
+                color = ProfileMuted,
+                textAlign = TextAlign.Center,
+                lineHeight = 19.sp
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = LogoutRed),
+                shape = RoundedCornerShape(18.dp)
+            ) {
+                Text("Sí, cerrar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar", color = ProfileMuted)
+            }
+        }
+    )
+}
+
+@Composable
+private fun ProfileHelpScreen(
+    onBackClick: () -> Unit,
+    onNavigate: (String) -> Unit
+) {
+    Scaffold(
+        containerColor = Color.Transparent,
+        bottomBar = {
+            ForestCareBottomBar(activeRoute = Screen.Profile.route, onNavigate = onNavigate)
+        }
+    ) { innerPadding ->
+        PremiumPlantBackground(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            topColor = Color(0xFFFDF8EF),
+            middleColor = ProfileBackground,
+            bottomColor = Color(0xFFF9F4EB)
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 28.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = ProfileGreen)
+                        }
+                        Column {
+                            Text("Ayuda", color = ProfileGreen, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                            Text("Preguntas rápidas para usar PlantCare", color = ProfileMuted, fontSize = 13.sp)
+                        }
+                    }
+                }
+                item {
+                    HelpCard(
+                        question = "¿Cómo registro una planta?",
+                        answer = "Toca el botón +, toma o sube una foto y espera la revisión automática. Después confirma el nombre y guarda."
+                    )
+                }
+                item {
+                    HelpCard(
+                        question = "¿Dónde veo mis plantas?",
+                        answer = "En la pestaña Plantas verás tu jardín en tarjetas. Puedes buscar, filtrar y tocar una planta para abrir su detalle."
+                    )
+                }
+                item {
+                    HelpCard(
+                        question = "¿Qué significa el porcentaje de salud?",
+                        answer = "Es una guía visual basada en el estado registrado, diagnóstico y señales de alerta. Si baja, revisa el detalle de la planta."
+                    )
+                }
+                item {
+                    HelpCard(
+                        question = "¿Cómo marco un cuidado realizado?",
+                        answer = "Abre el detalle de una planta o entra a Recordatorios. Desde allí puedes marcar riego o tareas como realizadas."
+                    )
+                }
+                item {
+                    HelpCard(
+                        question = "¿Qué hago si el análisis falla?",
+                        answer = "Puedes continuar manualmente. PlantCare mantiene un plan básico para que no pierdas el registro de tu planta."
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HelpCard(question: String, answer: String) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color.White,
+        shape = RoundedCornerShape(22.dp),
+        shadowElevation = 5.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(question, color = ProfileText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(answer, color = ProfileMuted, fontSize = 13.sp, lineHeight = 19.sp)
+        }
+    }
+}
+
 @Preview(showBackground = true, widthDp = 300, heightDp = 812)
 @Composable
 private fun ProfileScreenPreview() {
     ForestCareTheme(dynamicColor = false) {
         ProfileScreen(
             uiState = ProfileUiState(),
+            onUpdateProfile = { _, _ -> },
+            onLogout = {},
             onNavigate = {}
         )
     }
