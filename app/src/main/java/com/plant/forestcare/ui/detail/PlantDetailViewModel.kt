@@ -1,12 +1,13 @@
 package com.plant.forestcare.ui.detail
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.plant.forestcare.data.PlantRepository
 import com.plant.forestcare.data.local.PlantEntity
 import com.plant.forestcare.domain.care.CareUrgency
+import com.plant.forestcare.domain.care.ScheduleWateringUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,8 +15,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class PlantDetailViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = PlantRepository.getInstance(application)
+@HiltViewModel
+class PlantDetailViewModel @Inject constructor(
+    private val repository: PlantRepository,
+    private val scheduleWateringUseCase: ScheduleWateringUseCase
+) : androidx.lifecycle.ViewModel() {
     private var loadJob: Job? = null
     private var currentEntity: PlantEntity? = null
 
@@ -69,6 +73,7 @@ class PlantDetailViewModel(application: Application) : AndroidViewModel(applicat
         viewModelScope.launch {
             runCatching {
                 repository.markWateringDone(plant)
+                scheduleWateringUseCase.execute(plant.id)
             }.onFailure { error ->
                 _uiState.update {
                     it.copy(errorMessage = error.message ?: "No se pudo registrar el cuidado")

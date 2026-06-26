@@ -18,6 +18,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,7 +31,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -415,82 +417,79 @@ private fun PlantReviewScreen(
     onRetake: () -> Unit,
     onSave: () -> Unit
 ) {
-    LazyColumn(
+    val scrollState = rememberScrollState()
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(CameraBackground),
-        contentPadding = PaddingValues(16.dp),
+            .background(CameraBackground)
+            .verticalScroll(scrollState)
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        item {
-            ReviewHero(uiState = uiState)
-        }
-        item {
-            Surface(color = Color.White, shape = RoundedCornerShape(26.dp), shadowElevation = 8.dp) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .animateContentSize()
-                        .padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Text("Confirma tu planta", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    SimpleTextField(
-                        label = "Nombre personalizado",
-                        value = uiState.customName,
-                        placeholder = "Mi Monstera",
-                        onValueChange = onCustomNameChange
-                    )
-                    Text("Ubicación", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("Interior", "Exterior", "Balcón").forEach { option ->
-                            val selected = uiState.growthLocation == option
-                            Surface(
-                                onClick = { onLocationChange(option) },
-                                color = if (selected) CameraGreen else CameraBeige,
-                                shape = RoundedCornerShape(50),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Box(modifier = Modifier.height(38.dp), contentAlignment = Alignment.Center) {
-                                    Text(option, color = if (selected) Color.White else TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                }
+        ReviewHero(uiState = uiState)
+
+        Surface(color = Color.White, shape = RoundedCornerShape(26.dp), shadowElevation = 8.dp) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateContentSize()
+                    .padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text("Confirma tu planta", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                SimpleTextField(
+                    label = "Nombre personalizado",
+                    value = uiState.customName,
+                    placeholder = "Mi Monstera",
+                    onValueChange = onCustomNameChange
+                )
+                Text("Ubicación", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("Interior", "Exterior", "Balcón").forEach { option ->
+                        val selected = uiState.growthLocation == option
+                        Surface(
+                            onClick = { onLocationChange(option) },
+                            color = if (selected) CameraGreen else CameraBeige,
+                            shape = RoundedCornerShape(50),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(modifier = Modifier.height(38.dp), contentAlignment = Alignment.Center) {
+                                Text(option, color = if (selected) Color.White else TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
                 }
             }
         }
-        item {
-            CarePlanSummary(uiState = uiState)
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(
-                    onClick = onRetake,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(54.dp),
-                    shape = RoundedCornerShape(27.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = CameraBeige)
-                ) {
-                    Text("Nueva foto", color = CameraGreenDark, fontWeight = FontWeight.Bold)
-                }
-                Button(
-                    onClick = onSave,
-                    enabled = !uiState.isSaving,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(54.dp),
-                    shape = RoundedCornerShape(27.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = CameraGreen)
-                ) {
-                    if (uiState.isSaving) {
-                        CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Guardando planta...", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    } else {
-                        Text("Guardar planta", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
+
+        CarePlanSummary(uiState = uiState)
+
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Button(
+                onClick = onRetake,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(54.dp),
+                shape = RoundedCornerShape(27.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = CameraBeige)
+            ) {
+                Text("Nueva foto", color = CameraGreenDark, fontWeight = FontWeight.Bold)
+            }
+            Button(
+                onClick = onSave,
+                enabled = !uiState.isSaving,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(54.dp),
+                shape = RoundedCornerShape(27.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = CameraGreen)
+            ) {
+                if (uiState.isSaving) {
+                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Guardando planta...", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                } else {
+                    Text("Guardar planta", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
         }
