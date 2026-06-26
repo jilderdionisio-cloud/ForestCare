@@ -4,7 +4,7 @@ import android.app.Application
 import android.net.Uri
 import android.util.Base64
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.plant.forestcare.data.PlantIdApiException
 import com.plant.forestcare.data.PlantRepository
@@ -15,8 +15,10 @@ import com.plant.forestcare.domain.care.PlantCondition
 import com.plant.forestcare.domain.model.DiseaseDiagnosisResult
 import com.plant.forestcare.domain.model.GeminiPlantAnalysisInput
 import com.plant.forestcare.domain.model.GeminiPlantAnalysisResult
+import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.IOException
 import java.util.UUID
+import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -29,10 +31,15 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
-class PlantFormViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = PlantRepository.getInstance(application)
-    private val recommendationEngine = PlantCareRecommendationEngine()
-    private val geminiAnalysisUseCase = GeminiPlantAnalysisUseCase()
+@HiltViewModel
+class PlantFormViewModel @Inject constructor(
+    application: Application,
+    private val repository: PlantRepository,
+    private val recommendationEngine: PlantCareRecommendationEngine,
+    private val geminiAnalysisUseCase: GeminiPlantAnalysisUseCase
+) : ViewModel() {
+    
+    private val contentResolver = application.contentResolver
 
     private val _uiState = MutableStateFlow(PlantFormUiState())
     val uiState: StateFlow<PlantFormUiState> = _uiState.asStateFlow()
@@ -396,8 +403,7 @@ class PlantFormViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun String.toBase64(): String {
         val uri = Uri.parse(this)
-        val bytes = getApplication<Application>()
-            .contentResolver
+        val bytes = contentResolver
             .openInputStream(uri)
             ?.use { it.readBytes() }
             ?: throw IllegalArgumentException("No se pudo leer la imagen")
@@ -454,12 +460,7 @@ class PlantFormViewModel(application: Application) : AndroidViewModel(applicatio
         }?.onFailure { error ->
             Log.w(TAG, "[FLOW][GEMINI] Gemini falló, se mantiene fallback local: ${error.message}")
             val fallbackPlan = recommendationEngine.generateCarePlan(_uiState.value.toCondition())
-            val fallbackMessage =
-                if ((error as? com.plant.forestcare.domain.model.GeminiPlantAnalysisException)?.code == 503) {
-                    "Generamos un plan básico para tu planta."
-                } else {
-                    "Generamos un plan básico para tu planta."
-                }
+            val fallbackMessage = "Generamos un plan básico para tu planta."
             _uiState.update {
                 it.copy(
                     isGeminiAnalyzing = false,

@@ -72,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.plant.forestcare.navigation.Screen
 import com.plant.forestcare.ui.components.ForestCareBottomBar
@@ -90,7 +91,7 @@ private val UrgentOrange = Color(0xFFF9A825)
 @Composable
 fun DashboardRoute(
     navController: NavController,
-    viewModel: DashboardViewModel = viewModel()
+    viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 

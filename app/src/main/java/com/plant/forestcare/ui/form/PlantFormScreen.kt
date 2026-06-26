@@ -88,6 +88,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.plant.forestcare.navigation.Screen
 import com.plant.forestcare.ui.components.ForestCareBottomBar
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.plant.forestcare.ui.theme.ForestCareTheme
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -108,7 +109,7 @@ private val ChipGreen = Color(0xFFC8F5D2)
 fun PlantFormRoute(
     navController: NavController,
     plantId: String? = null,
-    viewModel: PlantFormViewModel = viewModel()
+    viewModel: PlantFormViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 

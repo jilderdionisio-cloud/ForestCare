@@ -1,7 +1,8 @@
 package com.plant.forestcare.di
 
 import android.content.Context
-import androidx.work.WorkManager
+import com.plant.forestcare.data.local.storage.ImageStorage
+import com.plant.forestcare.data.local.storage.ImageStorageManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -11,11 +12,11 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object CareModule {
+object StorageModule {
 
     @Provides
     @Singleton
-    fun provideWorkManager(@ApplicationContext context: Context): WorkManager {
-        return WorkManager.getInstance(context)
+    fun provideImageStorage(@ApplicationContext context: Context): ImageStorage {
+        return ImageStorageManager(context)
     }
 }

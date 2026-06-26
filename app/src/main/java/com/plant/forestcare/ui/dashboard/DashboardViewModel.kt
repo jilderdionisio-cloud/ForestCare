@@ -1,12 +1,13 @@
 package com.plant.forestcare.ui.dashboard
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.plant.forestcare.data.PlantRepository
 import com.plant.forestcare.data.local.PlantEntity
 import com.plant.forestcare.domain.care.CareUrgency
+import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -15,8 +16,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Dispatchers
 
-class DashboardViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = PlantRepository.getInstance(application)
+@HiltViewModel
+class DashboardViewModel @Inject constructor(
+    repository: PlantRepository
+) : ViewModel() {
 
     val uiState: StateFlow<DashboardUiState> = repository.getAllPlants()
         .map { plants ->

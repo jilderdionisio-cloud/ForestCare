@@ -1,8 +1,11 @@
 package com.plant.forestcare.domain.care
 
 import com.plant.forestcare.domain.model.GeminiPlantAnalysisResult
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class PlantCareRecommendationEngine {
+@Singleton
+class PlantCareRecommendationEngine @Inject constructor() {
     fun generateCarePlan(condition: PlantCondition): CarePlan {
         val plantText = "${condition.commonName} ${condition.scientificName} ${condition.apiDescription.orEmpty()}".lowercase()
         val location = condition.locationType.lowercase()

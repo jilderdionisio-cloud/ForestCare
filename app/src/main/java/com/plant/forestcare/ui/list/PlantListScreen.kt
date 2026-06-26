@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.plant.forestcare.navigation.Screen
 import com.plant.forestcare.ui.components.ForestCareBottomBar
 
@@ -87,7 +88,7 @@ fun PlantListRoute(
     onPlantClick: (String) -> Unit,
     onAddPlantClick: () -> Unit,
     onNavigate: (String) -> Unit,
-    viewModel: PlantListViewModel = viewModel()
+    viewModel: PlantListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 

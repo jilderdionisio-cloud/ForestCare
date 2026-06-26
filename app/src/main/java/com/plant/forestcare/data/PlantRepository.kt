@@ -1,27 +1,27 @@
 package com.plant.forestcare.data
 
-import android.content.Context
-import com.plant.forestcare.data.local.AppDatabase
 import com.plant.forestcare.data.local.PlantDao
 import com.plant.forestcare.data.local.PlantEntity
 import com.plant.forestcare.data.local.ReminderDao
 import com.plant.forestcare.data.local.ReminderEntity
 import com.plant.forestcare.data.remote.PlantRemoteDataSource
 import com.plant.forestcare.data.local.storage.ImageStorage
-import com.plant.forestcare.data.local.storage.ImageStorageManager
 import com.plant.forestcare.domain.model.DiseaseDiagnosisResult
 import com.plant.forestcare.domain.model.PlantApisConnectionTestResult
 import com.plant.forestcare.domain.model.PlantIdentificationResult
 import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
-class PlantRepository private constructor(
+@Singleton
+class PlantRepository @Inject constructor(
     private val plantDao: PlantDao,
     private val reminderDao: ReminderDao,
     private val imageStorage: ImageStorage,
-    private val remoteDataSource: PlantRemoteDataSource = PlantRemoteDataSource()
+    private val remoteDataSource: PlantRemoteDataSource
 ) {
     fun observePlants(): Flow<List<PlantEntity>> = plantDao.getAllPlantsFlow()
 
@@ -166,21 +166,5 @@ class PlantRepository private constructor(
         private const val REMINDER_WATERING = "watering"
         private const val REMINDER_WEEKLY_REVIEW = "weekly_review"
         private const val REMINDER_DISEASE_REVIEW = "revision_enfermedad"
-
-        @Volatile
-        private var INSTANCE: PlantRepository? = null
-
-        fun getInstance(context: Context): PlantRepository {
-            return INSTANCE ?: synchronized(this) {
-                val database = AppDatabase.getDatabase(context)
-                val instance = PlantRepository(
-                    plantDao = database.plantDao(),
-                    reminderDao = database.reminderDao(),
-                    imageStorage = ImageStorageManager(context)
-                )
-                INSTANCE = instance
-                instance
-            }
-        }
     }
 }

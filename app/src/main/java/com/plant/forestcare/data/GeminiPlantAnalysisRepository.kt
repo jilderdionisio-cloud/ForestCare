@@ -1,13 +1,14 @@
 package com.plant.forestcare.data
 
-import com.plant.forestcare.data.remote.RetrofitInstance
 import com.plant.forestcare.domain.model.GeminiPlantAnalysisInput
-import com.plant.forestcare.domain.model.GeminiPlantAnalysisResult
 import com.plant.forestcare.data.GeminiConnectionCheckResult
 import com.plant.forestcare.domain.model.PlantAnalysisResult
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class GeminiPlantAnalysisRepository(
-    private val service: GeminiPlantAnalysisService = RetrofitInstance.geminiPlantAnalysisService
+@Singleton
+class GeminiPlantAnalysisRepository @Inject constructor(
+    private val service: GeminiPlantAnalysisService
 ) {
     suspend fun analyzePlant(
         plantName: String,

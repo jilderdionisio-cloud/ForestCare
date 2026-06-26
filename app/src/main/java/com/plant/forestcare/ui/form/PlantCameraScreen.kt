@@ -72,8 +72,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.plant.forestcare.navigation.Screen
@@ -95,7 +95,7 @@ private enum class PlantCaptureStep {
 @Composable
 fun PlantCameraRoute(
     navController: NavController,
-    viewModel: PlantFormViewModel = viewModel()
+    viewModel: PlantFormViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }

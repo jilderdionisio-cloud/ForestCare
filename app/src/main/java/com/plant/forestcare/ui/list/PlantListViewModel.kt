@@ -1,13 +1,14 @@
 package com.plant.forestcare.ui.list
 
-import android.app.Application
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.plant.forestcare.data.PlantRepository
 import com.plant.forestcare.data.local.PlantEntity
 import com.plant.forestcare.domain.care.CareUrgency
+import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,8 +22,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class PlantListViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = PlantRepository.getInstance(application)
+@HiltViewModel
+class PlantListViewModel @Inject constructor(
+    private val repository: PlantRepository
+) : ViewModel() {
     private val retryTrigger = MutableStateFlow(0)
     private val searchQuery = MutableStateFlow("")
     private val selectedFilter = MutableStateFlow(PlantListFilter.All)

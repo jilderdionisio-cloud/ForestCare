@@ -4,14 +4,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.plant.forestcare.data.diagnostics.ApiDiagnosticResult
 import com.plant.forestcare.data.diagnostics.ApiDiagnosticsRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ApiDiagnosticsViewModel(
-    private val repository: ApiDiagnosticsRepository = ApiDiagnosticsRepository()
+@HiltViewModel
+class ApiDiagnosticsViewModel @Inject constructor(
+    private val repository: ApiDiagnosticsRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ApiDiagnosticsUiState())
     val uiState: StateFlow<ApiDiagnosticsUiState> = _uiState.asStateFlow()

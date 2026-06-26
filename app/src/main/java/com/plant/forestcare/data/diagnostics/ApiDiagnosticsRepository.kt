@@ -5,19 +5,21 @@ import com.google.gson.JsonObject
 import com.plant.forestcare.core.config.ApiConfig
 import com.plant.forestcare.data.GeminiConnectionCheckResult
 import com.plant.forestcare.data.GeminiPlantAnalysisService
-import com.plant.forestcare.data.remote.RetrofitInstance
 import com.plant.forestcare.data.remote.api.PlantDiseaseApiService
 import com.plant.forestcare.data.remote.api.PlantIdentificationApiService
 import com.plant.forestcare.data.remote.dto.PlantDiseaseRequestDto
 import com.plant.forestcare.data.remote.dto.PlantIdRequestDto
 import com.plant.forestcare.data.remote.dto.PlantIdResponseDto
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 import retrofit2.Response
 
-class ApiDiagnosticsRepository(
-    private val plantIdentificationApi: PlantIdentificationApiService = RetrofitInstance.plantIdentificationApiService,
-    private val diseaseApi: PlantDiseaseApiService = RetrofitInstance.plantDiseaseApiService,
-    private val geminiApi: GeminiPlantAnalysisService = RetrofitInstance.geminiPlantAnalysisService
+@Singleton
+class ApiDiagnosticsRepository @Inject constructor(
+    private val plantIdentificationApi: PlantIdentificationApiService,
+    private val diseaseApi: PlantDiseaseApiService,
+    private val geminiApi: GeminiPlantAnalysisService
 ) {
     suspend fun verifyAllApis(imageBase64: String): ApiDiagnosticsReport {
         val normalizedImage = imageBase64.substringAfter("base64,", imageBase64).trim()

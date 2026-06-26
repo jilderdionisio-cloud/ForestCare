@@ -14,10 +14,13 @@ import com.plant.forestcare.domain.model.PlantApiTestResult
 import com.plant.forestcare.domain.model.PlantApisConnectionTestResult
 import com.plant.forestcare.domain.model.PlantIdentificationResult
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class PlantRemoteDataSource(
-    private val identificationApi: PlantIdentificationApiService = RetrofitInstance.plantIdentificationApiService,
-    private val diseaseApi: PlantDiseaseApiService = RetrofitInstance.plantDiseaseApiService
+@Singleton
+class PlantRemoteDataSource @Inject constructor(
+    private val identificationApi: PlantIdentificationApiService,
+    private val diseaseApi: PlantDiseaseApiService
 ) {
     private val healthQueryValue: String = ApiConfig.PLANT_HEALTH_MODE.substringAfter("=")
 
@@ -327,7 +330,7 @@ class PlantRemoteDataSource(
 
     private fun Long.elapsedMs(): Long = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - this)
 
-    private companion object {
+    companion object {
         private const val TAG = "PlantRemoteDataSource"
     }
 }

@@ -1,11 +1,12 @@
 package com.plant.forestcare.ui.reminders
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.plant.forestcare.data.PlantRepository
 import com.plant.forestcare.data.local.ReminderEntity
+import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -13,8 +14,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class RemindersViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = PlantRepository.getInstance(application)
+@HiltViewModel
+class RemindersViewModel @Inject constructor(
+    private val repository: PlantRepository
+) : ViewModel() {
 
     val uiState: StateFlow<RemindersUiState> = repository.getPendingReminders()
         .map { reminders ->

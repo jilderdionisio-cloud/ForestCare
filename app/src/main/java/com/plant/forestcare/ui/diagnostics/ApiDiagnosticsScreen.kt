@@ -26,13 +26,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.plant.forestcare.data.diagnostics.ApiDiagnosticResult
 import com.plant.forestcare.data.diagnostics.ApiDiagnosticStatus
 
 @Composable
 fun ApiDiagnosticsRoute(
-    viewModel: ApiDiagnosticsViewModel = viewModel()
+    viewModel: ApiDiagnosticsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     ApiDiagnosticsScreen(
