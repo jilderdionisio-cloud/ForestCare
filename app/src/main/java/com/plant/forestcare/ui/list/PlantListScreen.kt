@@ -1,5 +1,6 @@
 package com.plant.forestcare.ui.list
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
@@ -20,8 +21,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -71,7 +74,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.plant.forestcare.navigation.Screen
+import com.plant.forestcare.ui.components.AnimatedEntry
 import com.plant.forestcare.ui.components.ForestCareBottomBar
+import com.plant.forestcare.ui.components.PremiumPlantBackground
 
 private val PlantBackground = Color(0xFFF8FAF7)
 private val PlantGreen = Color(0xFF2E7D32)
@@ -103,6 +108,7 @@ fun PlantListRoute(
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 fun PlantListScreen(
     uiState: PlantListUiState,
     onPlantClick: (String) -> Unit,
@@ -156,35 +162,33 @@ fun PlantListScreen(
             )
         }
     ) { innerPadding ->
-        Box(
+        PremiumPlantBackground(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color(0xFFE8F5E9), Color(0xFFFAF4E8), PlantBackground)
-                    )
-                )
+                .background(PlantBackground),
+            topColor = Color(0xFFE8F5E9),
+            middleColor = Color(0xFFFAF4E8),
+            bottomColor = PlantBackground
         ) {
-            LazyColumn(
+            LazyVerticalStaggeredGrid(
+                columns = StaggeredGridCells.Fixed(2),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
                 contentPadding = PaddingValues(start = 16.dp, top = 18.dp, end = 16.dp, bottom = 18.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalItemSpacing = 14.dp,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                item {
+                item(span = StaggeredGridItemSpan.FullLine) {
                     PlantListHeader(totalPlants = uiState.plants.size)
                 }
-                item {
+                item(span = StaggeredGridItemSpan.FullLine) {
                     SearchSummaryCard(
                         query = uiState.searchQuery,
                         onQueryChange = onSearchQueryChange
                     )
                 }
-                item {
-                    PlantListSectionHeader()
-                }
-                item {
+                item(span = StaggeredGridItemSpan.FullLine) {
                     PlantFilterRow(
                         selectedFilter = uiState.selectedFilter,
                         onFilterSelected = onFilterSelected
@@ -193,10 +197,10 @@ fun PlantListScreen(
 
                 when {
                     uiState.isLoading -> {
-                        item { LoadingState() }
+                        item(span = StaggeredGridItemSpan.FullLine) { LoadingState() }
                     }
                     uiState.errorMessage != null -> {
-                        item {
+                        item(span = StaggeredGridItemSpan.FullLine) {
                             MessageState(
                                 title = "No pudimos cargar tus plantas",
                                 message = uiState.errorMessage,
@@ -206,14 +210,16 @@ fun PlantListScreen(
                         }
                     }
                     uiState.isEmpty -> {
-                        item { EmptyPlantsState() }
+                        item(span = StaggeredGridItemSpan.FullLine) { EmptyPlantsState() }
                     }
                     else -> {
                         items(uiState.plants, key = { it.id }) { plant ->
-                            PlantListCard(
-                                plant = plant,
-                                onClick = { onPlantClick(plant.id) }
-                            )
+                            AnimatedEntry(delayMillis = 80) {
+                                PlantListCard(
+                                    plant = plant,
+                                    onClick = { onPlantClick(plant.id) }
+                                )
+                            }
                         }
                     }
                 }
@@ -230,46 +236,46 @@ private fun PlantListHeader(totalPlants: Int) {
     ) {
         Box(
             modifier = Modifier
-                .size(40.dp)
+                .size(38.dp)
                 .clip(CircleShape)
                 .background(
                     Brush.verticalGradient(
-                        listOf(Color(0xFFE2F3D8), Color(0xFFC9E6BB))
+                        listOf(Color(0xFFBFD8B5), Color(0xFF7FB678))
                     )
-                ),
+            ),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "M", color = PlantGreenDark, fontWeight = FontWeight.Black, fontSize = 18.sp)
+            Icon(Icons.Rounded.Spa, contentDescription = null, tint = PlantGreenDark, modifier = Modifier.size(18.dp))
         }
         Spacer(Modifier.width(10.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "$totalPlants plantas registradas",
+                text = "Good morning, Grower",
+                color = PlantGreenDark,
+                fontSize = 18.sp,
+                lineHeight = 22.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "$totalPlants plantas en tu jardín",
                 color = TextMuted,
                 fontSize = 11.sp,
                 lineHeight = 13.sp
             )
-            Text(
-                text = "Mi jardín",
-                color = TextPrimary,
-                fontSize = 22.sp,
-                lineHeight = 25.sp,
-                fontWeight = FontWeight.Bold
-            )
         }
         Surface(
-            color = Color.White,
-            shape = RoundedCornerShape(18.dp),
-            shadowElevation = 5.dp
+            color = Color.White.copy(alpha = 0.74f),
+            shape = CircleShape,
+            shadowElevation = 3.dp
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Icon(Icons.Rounded.Spa, contentDescription = null, tint = PlantGreen, modifier = Modifier.size(16.dp))
-                Text("Activas", color = TextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-            }
+            Icon(
+                Icons.Rounded.Spa,
+                contentDescription = null,
+                tint = PlantGreen,
+                modifier = Modifier
+                    .padding(9.dp)
+                    .size(18.dp)
+            )
         }
     }
 }
@@ -280,26 +286,19 @@ private fun SearchSummaryCard(
     onQueryChange: (String) -> Unit
 ) {
     Surface(
-        color = Color.White,
-        shape = RoundedCornerShape(22.dp),
-        shadowElevation = 6.dp
+        color = Color(0xFFF0ECE4),
+        shape = RoundedCornerShape(28.dp),
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .height(50.dp)
+                .padding(horizontal = 15.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFE7F6E8)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Rounded.Search, contentDescription = null, tint = PlantGreen, modifier = Modifier.size(18.dp))
-            }
+            Icon(Icons.Rounded.Search, contentDescription = null, tint = TextMuted, modifier = Modifier.size(18.dp))
             BasicTextField(
                 value = query,
                 onValueChange = onQueryChange,
@@ -313,7 +312,7 @@ private fun SearchSummaryCard(
                 decorationBox = { innerTextField ->
                     Box(contentAlignment = Alignment.CenterStart) {
                         if (query.isBlank()) {
-                            Text("Buscar por nombre o especie", color = TextMuted, fontSize = 13.sp)
+                            Text("Search your plants...", color = TextMuted, fontSize = 13.sp)
                         }
                         innerTextField()
                     }
@@ -334,20 +333,26 @@ private fun PlantFilterRow(
     ) {
         PlantListFilter.entries.forEach { filter ->
             val selected = filter == selectedFilter
+            val compactLabel = when (filter) {
+                PlantListFilter.All -> "Todas"
+                PlantListFilter.Healthy -> "Saludables"
+                PlantListFilter.Attention -> "Revisar"
+                PlantListFilter.Urgent -> "Urgentes"
+            }
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .height(34.dp)
+                    .height(36.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(if (selected) PlantGreen else Color.White)
+                    .background(if (selected) PlantGreen else Color(0xFFF0ECE4))
                     .clickable { onFilterSelected(filter) }
                     .padding(horizontal = 6.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = filter.label,
+                    text = compactLabel,
                     color = if (selected) Color.White else TextMuted,
-                    fontSize = 9.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -380,76 +385,125 @@ private fun PlantListCard(
     plant: PlantListItemUi,
     onClick: () -> Unit
 ) {
-    Row(
+    val imageHeight = if (plant.id.hashCode().mod(3) == 0) 190.dp else 132.dp
+    val healthScore = plant.healthScore()
+    val healthColor = when {
+        healthScore < 45 -> Color(0xFFD32F2F)
+        healthScore < 72 -> UrgentOrange
+        else -> PlantGreen
+    }
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(154.dp)
-            .shadow(12.dp, RoundedCornerShape(30.dp), ambientColor = PlantGreen.copy(alpha = 0.10f))
-            .clip(RoundedCornerShape(28.dp))
-            .background(
-                Brush.horizontalGradient(
-                    listOf(Color.White, Color(0xFFF9FCF7))
-                )
-            )
+            .shadow(10.dp, RoundedCornerShape(22.dp), ambientColor = PlantGreen.copy(alpha = 0.10f))
+            .clip(RoundedCornerShape(20.dp))
+            .background(Color.White)
             .clickable(onClick = onClick)
-            .padding(start = 14.dp, top = 14.dp, end = 14.dp, bottom = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(bottom = 12.dp)
     ) {
-        Column(
+        Box(
             modifier = Modifier
-                .weight(1f)
-                .padding(end = 10.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+                .fillMaxWidth()
+                .height(imageHeight)
+                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                .background(WarmBeige),
+            contentAlignment = Alignment.Center
         ) {
-            StatusBadge(text = plant.location.uppercase())
-            if (plant.hasDisease) {
-                StatusBadge(text = "REVISAR")
-            }
-            plant.riskLevel?.takeIf { it.isNotBlank() }?.let { risk ->
-                StatusBadge(text = "RIESGO ${risk.uppercase()}")
-            }
-            Column {
-                Text(
-                    text = plant.name,
-                    color = TextPrimary,
-                    fontSize = 16.sp,
-                    lineHeight = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+            if (plant.photoUri != null) {
+                AsyncImage(
+                    model = plant.photoUri,
+                    contentDescription = plant.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
-                val scientificName = plant.scientificName.ifBlank { "Nombre científico pendiente" }
-                Text(
-                    text = scientificName,
-                    color = TextMuted,
-                    fontStyle = FontStyle.Italic,
-                    fontSize = 11.sp,
-                    lineHeight = 13.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+            } else {
+                PlantIllustration(seed = plant.id)
             }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(22.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(Color.White.copy(alpha = 0.88f))
+                    .padding(horizontal = 8.dp, vertical = 3.dp)
             ) {
-                PlantMetric(title = "Estado", value = plant.healthStatus.toFriendlyHealth(), valueColor = PlantGreenDark)
-                PlantMetric(
-                    title = "Próximo",
-                    value = plant.nextCareText,
-                    valueColor = if (plant.nextCareText.equals("Hoy", ignoreCase = true)) UrgentOrange else TextPrimary
+                Text(
+                    text = plant.location.ifBlank { "Interior" }.uppercase(),
+                    color = PlantGreen,
+                    fontSize = 7.sp,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 1
                 )
             }
+        }
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 11.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             Text(
-                text = "${plant.diagnosis} · Revisión ${plant.nextReviewText}",
-                color = TextMuted,
-                fontSize = 10.sp,
-                lineHeight = 12.sp,
-                maxLines = 1,
+                text = plant.name,
+                color = TextPrimary,
+                fontSize = 16.sp,
+                lineHeight = 18.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
+            PlantCareHint(plant = plant, healthColor = healthColor)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(Color(0xFFECE8DE))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(healthScore / 100f)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(healthColor)
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Health", color = TextMuted, fontSize = 11.sp, modifier = Modifier.weight(1f))
+                Text("$healthScore%", color = healthColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
         }
-        PlantPhotoThumb(plant = plant)
+    }
+}
+
+@Composable
+private fun PlantCareHint(plant: PlantListItemUi, healthColor: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        Box(
+            modifier = Modifier
+                .size(9.dp)
+                .clip(CircleShape)
+                .background(healthColor.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(4.dp)
+                    .clip(CircleShape)
+                    .background(healthColor)
+            )
+        }
+        val message = when {
+            plant.hasDisease -> plant.diagnosis.ifBlank { "Necesita revisión" }
+            plant.nextCareText.equals("Hoy", ignoreCase = true) -> "Necesita cuidado hoy"
+            else -> plant.nextCareText.ifBlank { "Cuidado estable" }
+        }
+        Text(
+            text = message,
+            color = TextMuted,
+            fontSize = 10.sp,
+            lineHeight = 12.sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -681,5 +735,17 @@ private fun String.toFriendlyHealth(): String {
         contains("atención", ignoreCase = true) || contains("atencion", ignoreCase = true) -> "Revisar pronto"
         contains("salud", ignoreCase = true) -> "Saludable"
         else -> this
+    }
+}
+
+private fun PlantListItemUi.healthScore(): Int {
+    return when {
+        hasDisease -> 32
+        riskLevel?.contains("alto", ignoreCase = true) == true -> 45
+        riskLevel?.contains("medio", ignoreCase = true) == true -> 72
+        healthStatus.contains("urgente", ignoreCase = true) -> 38
+        healthStatus.contains("atención", ignoreCase = true) || healthStatus.contains("atencion", ignoreCase = true) -> 68
+        healthStatus.contains("salud", ignoreCase = true) -> 92
+        else -> 85
     }
 }

@@ -74,6 +74,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.plant.forestcare.navigation.Screen
 import com.plant.forestcare.ui.components.ForestCareBottomBar
+import com.plant.forestcare.ui.components.PremiumPlantBackground
 
 private val PlantBackground = Color(0xFFF8FAF7)
 private val PlantGreen = Color(0xFF2E7D32)
@@ -154,14 +155,13 @@ fun PlantDetailScreen(
             )
         }
     ) { innerPadding ->
-        Box(
+        PremiumPlantBackground(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color(0xFF123B25), Color(0xFFE8F5E9), PlantBackground)
-                    )
-                )
+                .background(PlantBackground),
+            topColor = Color(0xFF173F28),
+            middleColor = Color(0xFFE8F5E9),
+            bottomColor = PlantBackground
         ) {
             when {
                 uiState.isLoading -> {

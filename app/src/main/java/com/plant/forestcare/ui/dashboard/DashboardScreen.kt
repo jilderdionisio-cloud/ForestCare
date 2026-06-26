@@ -74,7 +74,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.plant.forestcare.navigation.Screen
+import com.plant.forestcare.ui.components.BotanicalHeroArt
 import com.plant.forestcare.ui.components.ForestCareBottomBar
+import com.plant.forestcare.ui.components.PremiumPlantBackground
 import com.plant.forestcare.ui.theme.ForestCareTheme
 
 private val PlantBackground = Color(0xFFF8FAF7)
@@ -163,14 +165,13 @@ fun DashboardScreen(
             )
         }
     ) { innerPadding ->
-        Box(
+        PremiumPlantBackground(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color(0xFFE8F5E9), PlantBackground, Color.White)
-                    )
-                )
+                .background(PlantBackground),
+            topColor = Color(0xFFE4F4DF),
+            middleColor = Color(0xFFFFF7EA),
+            bottomColor = PlantBackground
         ) {
             LazyColumn(
                 modifier = Modifier
@@ -285,7 +286,11 @@ private fun PremiumCareHero(uiState: DashboardUiState) {
                 .background(Color.White.copy(alpha = 0.16f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Rounded.Spa, contentDescription = null, tint = Color.White, modifier = Modifier.size(58.dp))
+            BotanicalHeroArt(
+                modifier = Modifier.size(108.dp),
+                leafColor = Color.White.copy(alpha = 0.78f),
+                accentColor = Color(0xFFC8F7C5)
+            )
         }
     }
 }

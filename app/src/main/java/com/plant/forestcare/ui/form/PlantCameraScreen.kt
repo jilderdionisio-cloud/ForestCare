@@ -75,6 +75,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.plant.forestcare.navigation.Screen
+import com.plant.forestcare.ui.components.BotanicalHeroArt
 import java.io.File
 
 private val CameraGreen = Color(0xFF2E7D32)
@@ -249,11 +250,25 @@ private fun PlantCameraScreen(
                     .fillMaxWidth()
                     .height(360.dp)
                     .clip(RoundedCornerShape(34.dp))
-                    .background(Color.White.copy(alpha = 0.08f))
+                    .background(
+                        Brush.radialGradient(
+                            listOf(Color.White.copy(alpha = 0.18f), Color.White.copy(alpha = 0.07f))
+                        )
+                    )
                     .border(2.dp, Color.White.copy(alpha = 0.75f), RoundedCornerShape(34.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Rounded.Spa, contentDescription = null, tint = Color.White.copy(alpha = 0.7f), modifier = Modifier.size(96.dp))
+                BotanicalHeroArt(
+                    modifier = Modifier.size(160.dp),
+                    leafColor = Color.White.copy(alpha = 0.78f),
+                    accentColor = Color(0xFFB9F6CA)
+                )
+                Icon(
+                    Icons.Rounded.Spa,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.42f),
+                    modifier = Modifier.size(88.dp)
+                )
                 Text(
                     text = "Coloca la planta dentro del marco",
                     color = Color.White,

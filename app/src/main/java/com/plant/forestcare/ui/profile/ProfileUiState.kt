@@ -2,10 +2,11 @@ package com.plant.forestcare.ui.profile
 
 data class ProfileUiState(
     val isLoading: Boolean = false,
-    val title: String = "Perfil",
-    val subtitle: String = "Tu espacio de cuidado personal",
-    val preferencesTitle: String = "Preferencias",
-    val preferencesDescription: String = "Próximamente podrás ajustar notificaciones, unidades y sincronización de cuenta.",
+    val title: String = "Profile",
+    val userName: String = "Elena Green",
+    val email: String = "elena.grower@plantcare.com",
+    val activePlants: Int = 12,
+    val healthScore: Int = 85,
     val errorMessage: String? = null
 ) {
     val isEmpty: Boolean

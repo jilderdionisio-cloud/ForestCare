@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,7 +42,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.plant.forestcare.navigation.Screen
+import com.plant.forestcare.ui.components.AnimatedEntry
 import com.plant.forestcare.ui.components.ForestCareBottomBar
+import com.plant.forestcare.ui.components.BotanicalHeroArt
+import com.plant.forestcare.ui.components.PremiumPlantBackground
 import com.plant.forestcare.ui.dashboard.DashboardViewModel
 
 private val PlantBackground = Color(0xFFFAFCF7)
@@ -81,104 +85,152 @@ private fun HomeScreen(
     onNavigate: (String) -> Unit
 ) {
     Scaffold(
-        containerColor = PlantBackground,
+        containerColor = Color.Transparent,
         bottomBar = {
             ForestCareBottomBar(activeRoute = Screen.Home.route, onNavigate = onNavigate)
         }
     ) { innerPadding ->
-        LazyColumn(
+        PremiumPlantBackground(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            topColor = Color(0xFFE7F5DE),
+            middleColor = Color(0xFFFFF7EA),
+            bottomColor = PlantBackground
         ) {
-            item {
-                HomeHeader()
-            }
-            item {
-                Surface(
-                    color = PlantGreen,
-                    shape = RoundedCornerShape(24.dp),
-                    shadowElevation = 8.dp
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(Color(0xFF43A047), Color(0xFF66BB6A))
-                                )
-                            )
-                            .padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            text = if (totalPlants == 0) "Registra tu primera planta" else "Tu jardín está listo para revisar",
-                            style = MaterialTheme.typography.titleLarge,
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    AnimatedEntry {
+                        HomeHeader()
+                    }
+                }
+                item {
+                    AnimatedEntry(delayMillis = 90) {
+                        HomeHeroCard(
+                            totalPlants = totalPlants,
+                            urgentPlants = urgentPlants,
+                            nextWateringText = nextWateringText,
+                            onAddPlant = onAddPlant
+                        )
+                    }
+                }
+                item {
+                    AnimatedEntry(delayMillis = 160) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            HomeMetricCard("Plantas", totalPlants.toString(), Modifier.weight(1f), onOpenPlants)
+                            HomeMetricCard("Saludables", healthyPlants.toString(), Modifier.weight(1f), onOpenDashboard)
+                        }
+                    }
+                }
+                item {
+                    AnimatedEntry(delayMillis = 230) {
+                        Surface(
                             color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = if (totalPlants == 0) {
-                                "Toma una foto, analiza su salud y recibe un plan de cuidado simple."
-                            } else {
-                                "Próximo riego: $nextWateringText. Cuidados urgentes: $urgentPlants."
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White.copy(alpha = 0.92f)
-                        )
-                        Button(
-                            onClick = onAddPlant,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                            shape = RoundedCornerShape(24.dp)
+                            shape = RoundedCornerShape(22.dp),
+                            shadowElevation = 6.dp,
+                            modifier = Modifier.clickable(onClick = onOpenDashboard)
                         ) {
-                            Icon(Icons.Rounded.Add, contentDescription = null, tint = PlantGreen)
-                            Spacer(Modifier.size(8.dp))
-                            Text("Agregar planta", color = PlantGreenDark, fontWeight = FontWeight.Bold)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFE7F6E8)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Rounded.WaterDrop, contentDescription = null, tint = PlantGreen)
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Resumen de cuidados", color = TextPrimary, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        text = "Abre el dashboard para ver alertas, salud y próximos cuidados.",
+                                        color = TextMuted,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    HomeMetricCard("Plantas", totalPlants.toString(), Modifier.weight(1f), onOpenPlants)
-                    HomeMetricCard("Saludables", healthyPlants.toString(), Modifier.weight(1f), onOpenDashboard)
+        }
+    }
+}
+
+@Composable
+private fun HomeHeroCard(
+    totalPlants: Int,
+    urgentPlants: Int,
+    nextWateringText: String,
+    onAddPlant: () -> Unit
+) {
+    Surface(
+        color = PlantGreen,
+        shape = RoundedCornerShape(28.dp),
+        shadowElevation = 10.dp
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(208.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(Color(0xFF123B25), Color(0xFF2E7D32), Color(0xFF66BB6A))
+                    )
+                )
+                .padding(20.dp)
+        ) {
+            BotanicalHeroArt(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .offset(x = 22.dp, y = 12.dp),
+                leafColor = Color.White.copy(alpha = 0.72f),
+                accentColor = Color(0xFFC8F7C5)
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(end = 104.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = if (totalPlants == 0) "Empieza tu jardín" else "Tu jardín está vivo",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = if (totalPlants == 0) {
+                            "Toma una foto y deja que PlantCare prepare el cuidado."
+                        } else {
+                            "Próximo riego: $nextWateringText. Cuidados urgentes: $urgentPlants."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.92f),
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
-            }
-            item {
-                Surface(
-                    color = Color.White,
-                    shape = RoundedCornerShape(22.dp),
-                    shadowElevation = 6.dp,
-                    modifier = Modifier.clickable(onClick = onOpenDashboard)
+                Button(
+                    onClick = onAddPlant,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(24.dp)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFE7F6E8)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Rounded.WaterDrop, contentDescription = null, tint = PlantGreen)
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Resumen de cuidados", color = TextPrimary, fontWeight = FontWeight.Bold)
-                            Text(
-                                text = "Abre el dashboard para ver alertas, salud y próximos cuidados.",
-                                color = TextMuted,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
+                    Icon(Icons.Rounded.Add, contentDescription = null, tint = PlantGreen)
+                    Spacer(Modifier.size(8.dp))
+                    Text("Agregar planta", color = PlantGreenDark, fontWeight = FontWeight.Bold)
                 }
             }
         }

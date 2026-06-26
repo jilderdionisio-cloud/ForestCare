@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.material3.Button
@@ -40,7 +41,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.plant.forestcare.navigation.Screen
+import com.plant.forestcare.ui.components.AnimatedEntry
+import com.plant.forestcare.ui.components.BotanicalHeroArt
 import com.plant.forestcare.ui.components.ForestCareBottomBar
+import com.plant.forestcare.ui.components.PremiumPlantBackground
 
 private val PlantBackground = Color(0xFFF8FAF7)
 private val PlantGreen = Color(0xFF2E7D32)
@@ -88,67 +92,125 @@ private fun RemindersScreen(
         }
     ) { innerPadding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color(0xFFE8F5E9), PlantBackground, Color.White)
-                    )
-                )
+            modifier = Modifier.fillMaxSize()
         ) {
-            LazyColumn(
+            PremiumPlantBackground(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                topColor = Color(0xFFEAF7E6),
+                middleColor = Color(0xFFFFF7EB),
+                bottomColor = PlantBackground
             ) {
-                item {
-                    Text(
-                        text = "Recordatorios",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = TextPrimary,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = "Tareas de hoy y próximos cuidados",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextMuted
-                    )
-                }
-                when {
-                    uiState.isLoading -> item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(180.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = PlantGreen)
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    item {
+                        AnimatedEntry {
+                            RemindersHero(pendingCount = uiState.reminders.size)
                         }
                     }
-                    uiState.errorMessage != null -> item {
-                        MessageCard(
-                            title = "No pudimos cargar tus recordatorios",
-                            message = uiState.errorMessage
-                        )
-                    }
-                    uiState.isEmpty -> item {
-                        MessageCard(
-                            title = "No tienes tareas pendientes",
-                            message = "Cuando una planta necesite agua o revisión, aparecerá aquí."
-                        )
-                    }
-                    else -> items(uiState.reminders, key = { it.id }) { reminder ->
-                        ReminderCard(
-                            reminder = reminder,
-                            onComplete = { onComplete(reminder.id) },
-                            onPostpone = { onPostpone(reminder.id) },
-                            onSkip = { onSkip(reminder.id) }
-                        )
+                    when {
+                        uiState.isLoading -> item {
+                            AnimatedEntry(delayMillis = 100) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(180.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(color = PlantGreen)
+                                }
+                            }
+                        }
+                        uiState.errorMessage != null -> item {
+                            AnimatedEntry(delayMillis = 100) {
+                                MessageCard(
+                                    title = "No pudimos cargar tus recordatorios",
+                                    message = uiState.errorMessage
+                                )
+                            }
+                        }
+                        uiState.isEmpty -> item {
+                            AnimatedEntry(delayMillis = 100) {
+                                MessageCard(
+                                    title = "Todo está en calma",
+                                    message = "Cuando una planta necesite agua o revisión, aparecerá aquí."
+                                )
+                            }
+                        }
+                        else -> items(uiState.reminders, key = { it.id }) { reminder ->
+                            AnimatedEntry(delayMillis = 90) {
+                                ReminderCard(
+                                    reminder = reminder,
+                                    onComplete = { onComplete(reminder.id) },
+                                    onPostpone = { onPostpone(reminder.id) },
+                                    onSkip = { onSkip(reminder.id) }
+                                )
+                            }
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun RemindersHero(pendingCount: Int) {
+    Surface(
+        color = Color.White,
+        shape = RoundedCornerShape(28.dp),
+        shadowElevation = 9.dp
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(156.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(Color.White, Color(0xFFEFF8E9))
+                    )
+                )
+                .padding(18.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(end = 106.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Recordatorios",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = TextPrimary,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = if (pendingCount == 0) {
+                        "Tus plantas no necesitan nada urgente ahora."
+                    } else {
+                        "$pendingCount cuidado(s) esperando por ti."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextMuted
+                )
+                Row(
+                    modifier = Modifier.padding(top = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = PlantGreen, modifier = Modifier.size(17.dp))
+                    Text("Tareas de hoy", color = PlantGreenDark, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            BotanicalHeroArt(
+                modifier = Modifier.align(Alignment.CenterEnd),
+                leafColor = PlantGreen,
+                accentColor = Color(0xFF9AD69E)
+            )
         }
     }
 }

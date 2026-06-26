@@ -7,6 +7,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.plant.forestcare.ui.auth.LoginRoute
+import com.plant.forestcare.ui.auth.RegisterRoute
 import com.plant.forestcare.ui.dashboard.DashboardRoute
 import com.plant.forestcare.ui.diagnostics.ApiDiagnosticsRoute
 import com.plant.forestcare.ui.detail.PlantDetailRoute
@@ -14,19 +16,75 @@ import com.plant.forestcare.ui.form.PlantCameraRoute
 import com.plant.forestcare.ui.form.PlantFormRoute
 import com.plant.forestcare.ui.home.HomeRoute
 import com.plant.forestcare.ui.list.PlantListRoute
+import com.plant.forestcare.ui.onboarding.OnboardingRoute
+import com.plant.forestcare.ui.onboarding.SplashRoute
 import com.plant.forestcare.ui.profile.ProfileRoute
 import com.plant.forestcare.ui.reminders.RemindersRoute
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    startDestination: String = Screen.Dashboard.route,
+    onOnboardingFinished: () -> Unit = {},
+    onAuthFinished: () -> Unit = {}
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Dashboard.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
+        composable(Screen.Splash.route) {
+            SplashRoute(
+                onFinished = {
+                    navController.navigate(Screen.Onboarding.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+        composable(Screen.Onboarding.route) {
+            OnboardingRoute(
+                onFinished = {
+                    onOnboardingFinished()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+        composable(Screen.Login.route) {
+            LoginRoute(
+                onLoginSuccess = {
+                    onAuthFinished()
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onRegisterClick = {
+                    navController.navigate(Screen.Register.route) {
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+        composable(Screen.Register.route) {
+            RegisterRoute(
+                onRegisterSuccess = {
+                    onAuthFinished()
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onLoginClick = {
+                    navController.popBackStack(Screen.Login.route, inclusive = false)
+                }
+            )
+        }
         composable(Screen.Home.route) {
             HomeRoute(navController = navController)
         }
